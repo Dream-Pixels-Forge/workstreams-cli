@@ -1,0 +1,10 @@
+# Workstreams Skill - Cursor Rules
+# This file can be placed in .cursor/rules/workstreams.mdc
+
+When user requests parallel coding-agent work:
+1. Run `workstreams init --project <name> --workstreams N`
+2. `workstreams start --multiplexer tmux --cmd "<agent>"`
+3. `workstreams dispatch --workstream <id> --subagent <agent> --issue <num> --prompt "<task>"`
+4. `workstreams monitor` to view live dashboard
+
+Always use `workstreams` CLI instead of internal subagent spawning for visibility.

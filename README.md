@@ -1,5 +1,7 @@
 # workstreams
 
+![Workstreams Banner](assets/workstreams-cli-banner-a.png)
+
 Visually dispatch coding-agent work to subagents in real terminal windows and monitor it in one dashboard — for any coding agent (Claude Code, Codex, OpenCode, Qwen Code, Hermes, Cline, and more).
 
 `workstreams` runs your coding agents **in parallel across real terminal windows** (tmux, zellij), isolates each one in its own git worktree + branch, and gives you a single live dashboard to watch them all. Instead of running subagents invisibly inside one agent's process, you **see each agent working in its own visible window** and get event-streamed progress back to one shared log.
@@ -42,7 +44,7 @@ Coding agents increasingly support "subagents" that run in the background of the
 
 ## Installation
 
-Requires **Python 3.9+** and **git**. A terminal multiplexer (`tmux` recommended, or `zellij`) is required for `start`/`dispatch`/`work` to actually place agents into visible windows. `pr`/`merge` commands additionally require the `gh` CLI (GitHub) authenticated.
+Requires **Python 3.9+** and **git**. A terminal multiplexer (`tmux` recommended, or `zellij`, `nami`, `lmux`, `wmux`, `herdr`) is required for `start`/`dispatch`/`work` to actually place agents into visible windows. `pr`/`merge` commands additionally require the `gh` CLI (GitHub) authenticated.
 
 ```bash
 # from PyPI (core; JSON config fallback built-in)
@@ -283,7 +285,7 @@ Created by `init` in your repo's root. Edit by hand to give lanes meaningful nam
 
 ```yaml
 project: myproject
-multiplexer: tmux            # tmux | zellij
+multiplexer: tmux            # tmux | zellij | nami | lmux | wmux | herdr
 layout: even-horizontal     # even-horizontal | even-vertical | main-horizontal | tiled
 base_branch: main
 mode: worktree              # worktree | branch
