@@ -1,6 +1,6 @@
 # workstreams
 
-![Workstreams Banner](assets/workstreams-cli-banner-a.png)
+![Workstreams Banner](assets/workstreams-banner-a.png)
 
 Visually dispatch coding-agent work to subagents in real terminal windows and monitor it in one dashboard — for any coding agent (Claude Code, Codex, OpenCode, Qwen Code, Hermes, Cline, and more).
 
@@ -48,14 +48,14 @@ Requires **Python 3.9+** and **git**. A terminal multiplexer (`tmux` recommended
 
 ```bash
 # from PyPI (core; JSON config fallback built-in)
-pip install workstreams-cli
+pip install workstreams
 
 # with YAML config support (recommended — .workstreams.yaml becomes first-class)
-pip install "workstreams-cli[yaml]"
+pip install "workstreams[yaml]"
 
 # develop from source (this repo)
-git clone https://github.com/Dream-Pixels-Forge/workstreams-cli.git
-cd workstreams-cli
+git clone https://github.com/Dream-Pixels-Forge/workstreams.git
+cd workstreams
 pip install -e ".[yaml,dev]"   # dev extras add pytest
 ```
 
@@ -63,11 +63,11 @@ pip install -e ".[yaml,dev]"   # dev extras add pytest
 >
 > ```bash
 > # option 1: pipx — cleanest, no venv juggling
-> pipx install workstreams-cli
+> pipx install workstreams
 >
 > # option 2: virtualenv
 > python3 -m venv ~/.workstreams-venv
-> ~/.workstreams-venv/bin/pip install "workstreams-cli[yaml]"
+> ~/.workstreams-venv/bin/pip install "workstreams[yaml]"
 > export PATH="$HOME/.workstreams-venv/bin:$PATH"
 > ```
 
@@ -124,7 +124,7 @@ A JSONL record written to a shared log whenever a subagent reports progress. Eve
 
 ```bash
 # 0) install (once)
-pip install "workstreams-cli[yaml]"
+pip install "workstreams[yaml]"
 
 # 1) create 3 parallel lanes for a project, each in its own worktree + branch
 workstreams init --project myproj --workstreams 3
@@ -281,7 +281,7 @@ Run `workstreams <command> --help` for per-command flags. `--project` and `--jso
 
 ## Configuration (.workstreams.yaml)
 
-Created by `init` in your repo's root. Edit by hand to give lanes meaningful names, commands, and env. If PyYAML is installed (`workstreams-cli[yaml]`) this is read/written as YAML; otherwise workstreams falls back to a JSON file (`.workstreams.json`).
+Created by `init` in your repo's root. Edit by hand to give lanes meaningful names, commands, and env. If PyYAML is installed (`workstreams[yaml]`) this is read/written as YAML; otherwise workstreams falls back to a JSON file (`.workstreams.json`).
 
 ```yaml
 project: myproject
@@ -466,7 +466,7 @@ $WORKSTREAMS_DATA_DIR         # override the whole ~/.workstreams base if set
 The repo ships an agent skill under `skills/` that teaches your coding agent (Claude Code, Codex, OpenCode, Qwen Code, MiMoCode, Hermes, Kilo Code, Cline, …) the exact commands above, so it can plan, dispatch, monitor, and collect work autonomously:
 
 ```bash
-npx skills add https://github.com/Dream-Pixels-Forge/workstreams-cli/tree/main/skills
+npx skills add https://github.com/Dream-Pixels-Forge/workstreams/tree/main/skills
 ```
 
 The skill (`skills/SKILL.md`, plus `skills/REFERENCE.md` and `skills/EXAMPLES.md`) maps to this CLI:
@@ -499,7 +499,7 @@ jobs:
         workstream: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
-      - run: pip install workstreams-cli
+      - run: pip install workstreams
       - run: |
           workstreams init --project ci-test --workstreams 4
           workstreams sync --workstream ${{ matrix.workstream }}
@@ -519,7 +519,7 @@ workstreams merge --workstream 1 --auto --method squash
 
 | Symptom | What to do |
 |---------|-----------|
-| `pip install workstreams-cli` fails on Ubuntu/Debian with "externally-managed-environment" (PEP 668) | System pip is locked down. Use `pipx install workstreams-cli` or a virtualenv: `python3 -m venv ~/.workstreams-venv && ~/.workstreams-venv/bin/pip install "workstreams-cli[yaml]"`. The package on PyPI is `workstreams-cli` (the module/CLI command stays `workstreams`). |
+| `pip install workstreams` fails on Ubuntu/Debian with "externally-managed-environment" (PEP 668) | System pip is locked down. Use `pipx install workstreams` or a virtualenv: `python3 -m venv ~/.workstreams-venv && ~/.workstreams-venv/bin/pip install "workstreams[yaml]"`. The package on PyPI is `workstreams` (the module/CLI command stays `workstreams`). |
 | `tmux session 'workstreams-<p>' is not running` | Run `workstreams start` first; the pane targets exist but the detached session isn't up. |
 | `git worktree add failed for ws/N` during `init` | Stale worktree metadata. Run `git worktree prune`, then retry. Or pre-plan with `init --no-worktrees` and materialize later. |
 | Base branch `main` not found at init | workstreams falls back to `HEAD` and prints a note. Set `--base-branch` to the real branch. |
@@ -529,7 +529,7 @@ workstreams merge --workstream 1 --auto --method squash
 | No desktop notification | Desktop sender is best-effort (`notify-send`/`terminal-notify`/`osascript`); the notification *file* is always written, so poll `notifications.jsonl` or rely on the dashboard. |
 | `dispatch`/`work` says "pane send failed" but no error | The multiplexer binary may be missing or the session was killed. Verify with `workstreams attach`. |
 | zellij `send_command` runs in the wrong tab | Known limitation — zellij dispatch targets the *current* tab. Use tmux for reliable per-lane targeting. |
-| Config not loading | Without PyYAML, workstreams uses the built-in minimal parser (scalars + simple lists of maps). For full YAML, `pip install "workstreams-cli[yaml]"`. |
+| Config not loading | Without PyYAML, workstreams uses the built-in minimal parser (scalars + simple lists of maps). For full YAML, `pip install "workstreams[yaml]"`. |
 
 ### Quick diagnostics
 
@@ -561,7 +561,7 @@ workstreams logs --workstream 1 --lines 50
 ## Repository Layout
 
 ```
-workstreams-cli/
+workstreams/
 ├── src/workstreams/
 │   ├── __init__.py         # public API (models, manager, event fns, multiplexers)
 │   ├── cli.py              # argparse CLI (entry: workstreams.cli:main)
@@ -577,7 +577,7 @@ workstreams-cli/
 │   └── multiplexer/        # tmux + zellij backends (MultiplexerBase)
 ├── skills/                 # agent skill: SKILL.md, REFERENCE.md, EXAMPLES.md
 ├── scripts/                # standalone script variants + helpers
-├── pyproject.toml          # packaging (pip install workstreams-cli)
+├── pyproject.toml          # packaging (pip install workstreams)
 └── .github/workflows/      # PyPI release on GitHub Release (OIDC)
 ```
 
@@ -589,4 +589,4 @@ workstreams-cli/
 - Author: **Dream-Pixels-Forge**
 - Development: `pip install -e ".[yaml,dev]"` then `pytest` (testpaths `tests`, pythonpath `src`)
 
-**Project page:** https://github.com/Dream-Pixels-Forge/workstreams-cli
+**Project page:** https://github.com/Dream-Pixels-Forge/workstreams
