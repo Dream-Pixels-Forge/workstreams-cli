@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/workstreams
+      url: https://pypi.org/p/workstreams-cli
     permissions:
       id-token: write  # OIDC trusted publishing
 
