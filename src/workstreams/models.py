@@ -110,19 +110,12 @@ class SubagentEvent:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "SubagentEvent":
-        known = {
-            "workstream_id", "subagent", "issue", "event_type",
-            "message", "timestamp", "data",
-        }
-        return cls(**{k: data.get(k, d) for k, d in {
-            "workstream_id": 0,
-            "subagent": "unknown",
-            "issue": 0,
-            "event_type": "progress",
-            "message": "",
-            "timestamp": datetime.now(UTC).isoformat(),
-            "data": {},
-        }.items() if k in known and k in data} | {
-            "timestamp": data.get("timestamp", datetime.now(UTC).isoformat()),
-            "data": data.get("data", {}),
-        })
+        return cls(
+            workstream_id=data.get("workstream_id", 0),
+            subagent=data.get("subagent", "unknown"),
+            issue=data.get("issue", 0),
+            event_type=data.get("event_type", "progress"),
+            message=data.get("message", ""),
+            timestamp=data.get("timestamp", datetime.now(UTC).isoformat()),
+            data=data.get("data", {}) or {},
+        )

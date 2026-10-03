@@ -186,6 +186,7 @@ def _parse_scalar(value: str) -> Any:
 def save_config(config: WorkstreamsConfig, base_path: Optional[Path] = None) -> Path:
     """Save configuration to .workstreams.yaml (or .json fallback without pyyaml)."""
     base_path = Path(base_path or config.base_path).resolve()
+    base_path.mkdir(parents=True, exist_ok=True)
     config_file = config_path_in(base_path)
 
     config_dict: Dict[str, Any] = {
