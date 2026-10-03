@@ -38,6 +38,7 @@ Coding agents increasingly support "subagents" that run in the background of the
 - [CI/CD Integration](#cicd-integration)
 - [Troubleshooting](#troubleshooting)
 - [Best Practices](#best-practices)
+- [Architecture](#architecture)
 - [Contributing & License](#contributing--license)
 
 ---
@@ -74,7 +75,7 @@ pip install -e ".[yaml,dev]"   # dev extras add pytest
 Verify:
 
 ```bash
-workstreams --version   # -> workstreams 0.5.0
+workstreams --version   # -> workstreams 0.5.1
 ```
 
 > **Note:** every command also accepts `--json` to emit machine-readable output (where supported), which coding agents can parse. All read-side commands work without a multiplexer installed; only `start`/`dispatch`/`work`/`attach` need one.
@@ -558,28 +559,70 @@ workstreams logs --workstream 1 --lines 50
 
 ---
 
-## Repository Layout
+## Architecture
+
+`workstreams` is a thin orchestration layer that sits between you, your git repo, a terminal multiplexer, and any coding agent binary. The core parts and how they fit together:
 
 ```
-workstreams-cli/
-├── src/workstreams/
-│   ├── __init__.py         # public API (models, manager, event fns, multiplexers)
-│   ├── cli.py              # argparse CLI (entry: workstreams.cli:main)
-│   ├── config.py           # YAML/JSON config load+save (with no-pyyaml fallback)
-│   ├── models.py           # dataclasses: WorkstreamConfig, WorkstreamsConfig,
-│   │                       #   WorkstreamStatus, SubagentEvent
-│   ├── manager.py          # WorkstreamsManager: init/start/dispatch/work/
-│   │                       #   sync/pr/merge/run/logs/events/notify
-│   ├── event_log.py        # append-only JSONL event log (concurrent-safe)
-│   ├── notifier.py         # desktop + file notifications
-│   ├── dashboard.py        # live ANSI TUI monitor
-│   ├── subagent_client.py  # subagent_* event emitters (Python API)
-│   └── multiplexer/        # tmux + zellij backends (MultiplexerBase)
-├── skills/                 # agent skill: SKILL.md, REFERENCE.md, EXAMPLES.md
-├── scripts/                # standalone script variants + helpers
-├── pyproject.toml          # packaging (pip install workstreams-cli)
-└── .github/workflows/      # PyPI release on GitHub Release (OIDC)
+                 you / your main terminal / a CI job / a cron
+                                   │  CLI (argparse)
+                                   ▼
+        ┌─────────────────────────────────────────────────────────┐
+        │                  cli.py  (entry: workstreams)          │
+        └─────────────────────────────────────────────────────────┘
+        │  command routing          │  config resolution (flag > yaml > env > default)
+        ▼                            ▼
+┌──────────────────────┐   ┌──────────────────────┐
+│  WorkstreamsManager  │   │  config.py            │
+│  (manager.py)        │◄──│  .workstreams.yaml /  │
+│  init·start·dispatch │   │  .json load+save,     │
+│  work·sync·pr·merge· │   │  no-pyyaml fallback   │
+│  run·logs·events     │   └──────────────────────┘
+└──────┬───────────────┘
+       │
+   ┌───┴──────────────────────────────────────────────┐
+   │                                                    │
+   ▼                                                    ▼
+┌────────────────────────────┐          ┌────────────────────────────┐
+│  multiplexer/  (backends)  │          │  event_log.py  +           │
+│  tmux.py / zellij.py       │          │  subagent_client.py        │
+│  MultiplexerBase:          │          │  (Python API emitters)     │
+│   create_session, send_    │          │                            │
+│   command, list_sessions…  │          │  NOTIFIER                  │
+└─────────────┬──────────────┘          │  (notifier.py): desktop    │
+              │ send-keys / tabs        │  notify-send/osascript +   │
+              ▼                         │  notifications.jsonl       │
+      visible terminal panes ◄──────────┤                            │
+      (one per workstream lane)        └────────────────────────────┘
+              │ each pane runs its own agent (claude, codex, …)
+              │ agent appends JSONL events back
+              ▼
+┌──────────────────────────────────────────────────────────────┐
+│  ~/.workstreams/<project>/                                   │
+│    events.jsonl     shared, concurrent-safe event stream     │
+│    notifications.jsonl   cross-terminal notification queue  │
+└──────────────────────────────────────────────────────────────┘
+              ▲
+              │ re-render every 2s (configurable)
+┌────────────────────────────┐
+│  dashboard.py             │
+│  LiveDashboard: ANSI TUI  │  ◄── the only read-side that polls events live
+└────────────────────────────┘
+
+models.py defines the dataclasses (WorkstreamConfig, WorkstreamsConfig,
+WorkstreamStatus, SubagentEvent) shared across all of the above.
 ```
+
+How a run flows end-to-end:
+
+1. **`init`** creates the lanes: for each workstream it adds a git worktree/branch (`ws/N`) plus a `worktrees/N/` directory, then writes `.workstreams.yaml` in the repo root.
+2. **`start`** asks the chosen multiplexer backend (tmux by default) to open a detached, auto-named session `workstreams-<project>`, one window/tab per lane, each holding a persistent shell.
+3. **`dispatch` / `work` / `run`** target a specific lane's pane (`<session>:<window-name>` for tmux windows, pane index for tiled) and send a command/prompt into it, emitting a `started` event to the shared log and firing a notification.
+4. **Any** process — the agent inside a pane, a CI job, a script, the main terminal — appends JSONL events (`started`, `progress`, `completed`, `failed`, `error`, `done`) to `events.jsonl` using `O_APPEND` plus a short lock that self-heals stale locks after 10s, so concurrent writers never corrupt the stream.
+5. **`monitor`** (the dashboard) and **`events`** read that stream back and re-render every 2s; `--wait` on `dispatch`/`work` blocks until a terminal event arrives (4h safety timeout).
+6. **`sync` / `pr` / `merge` / `workstream cleanup`** close the loop: rebase/merge the lane, push and open a PR via `gh`, merge it, and prune the finished worktree.
+
+Read-side commands (`status`, `events`, `logs`, `monitor`) need no multiplexer; only `start`/`dispatch`/`work`/`attach` require one to be installed.
 
 ---
 

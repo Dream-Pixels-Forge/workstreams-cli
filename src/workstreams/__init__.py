@@ -34,7 +34,7 @@ from .subagent_client import (
 )
 from .multiplexer import MultiplexerBase, TmuxMultiplexer, ZellijMultiplexer, get_multiplexer
 
-__version__ = "0.5.0"
+__version__ = "0.5.1"
 
 __all__ = [
     # models
