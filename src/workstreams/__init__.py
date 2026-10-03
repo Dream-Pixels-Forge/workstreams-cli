@@ -6,7 +6,7 @@ MiMoCode, Hermes, Kilo Code, Cline, and any other coding agent you can
 run from a shell.
 
 Quick start:
-    pip install workstreams[cli]
+    pip install workstreams-cli
     workstreams init --project myproj --workstreams 3
     workstreams start --cmd "claude"
     workstreams dispatch --workstream 1 --subagent claude-code --issue 42 --prompt "Fix auth"

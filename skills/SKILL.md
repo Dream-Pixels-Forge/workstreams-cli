@@ -52,6 +52,7 @@ An isolated development environment with its own:
 |-------------|---------|----------------|
 | tmux | `tmux new-session -d -s project` | even-horizontal, even-vertical, main-horizontal, tiled |
 | zellij | `zellij attach project` | tabs, panes, floating |
+| nami / lmux / wmux / herdr | tmux-compatible CLI wrappers | even-horizontal, even-vertical, main-horizontal, tiled |
 
 ### New: Monitoring & Coordination
 | Feature | Command | Description |
@@ -291,6 +292,7 @@ workstreams/
     ├── __init__.py      # Multiplexer factory
     ├── base.py          # Abstract base class
     ├── tmux.py          # Tmux implementation
+    ├── tmux_compatible.py # Tmux-compatible wrappers (nami, lmux, wmux, herdr)
     └── zellij.py        # Zellij implementation
 ```
 

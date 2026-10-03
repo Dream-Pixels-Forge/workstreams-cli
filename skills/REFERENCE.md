@@ -7,14 +7,16 @@
 workstreams init [OPTIONS]
 
 Options:
-  --project NAME          Project name (required)
-  --workstreams N         Number of workstreams (default: 4)
-  --multiplexer TYPE      tmux|zellij|tmuxp|wezterm|kitty (default: tmux)
-  --layout LAYOUT         even-horizontal|even-vertical|main-horizontal|tiled (default: even-horizontal)
+  --project NAME          Project name (default: directory name)
+  --workstreams N         Number of workstreams to create (default: 4)
+  --multiplexer TYPE      tmux|zellij|nami|lmux|wmux|herdr (default: tmux)
+  --layout LAYOUT         even-horizontal|even-vertical|main-horizontal|tiled
   --base-branch BRANCH    Base branch (default: main)
   --mode MODE             worktree|branch (default: worktree)
-  --shared-deps LIST      Comma-separated paths to share
-  --force                 Override existing configuration
+  --agent TYPE            auto|claude|codex|opencode|qwen|generic
+  --force                 Overwrite existing configuration
+  --no-worktrees          Skip git worktree creation
+  --json                  Emit JSON output
 ```
 
 ### workstreams start
@@ -22,10 +24,12 @@ Options:
 workstreams start [OPTIONS]
 
 Options:
-  --workstream ID         Start specific workstream
-  --command CMD           Override default command
-  --env KEY=VAL           Set environment variable
-  --detach                Run in background
+  --project NAME          Project name
+  --workstream ID         Start a single workstream by ID
+  --cmd CMD               Override the command sent to each pane
+  --multiplexer TYPE      tmux|zellij|nami|lmux|wmux|herdr
+  --layout LAYOUT         even-horizontal|even-vertical|main-horizontal|tiled
+  --json                  Emit JSON output
 ```
 
 ### workstreams status
@@ -33,54 +37,11 @@ Options:
 workstreams status [OPTIONS]
 
 Options:
-  --workstream ID         Show specific workstream
-  --verbose               Show detailed info
-  --live                  Live updating status
-  --format FORMAT         table|json|yaml (default: table)
-```
-
-### workstreams assign
-```bash
-workstreams assign [OPTIONS]
-
-Options:
-  --workstream ID         Target workstream (required)
-  --issue NUM             GitHub issue number
-  --issue LIST            Comma-separated issue numbers
-  --task TEXT             Custom task description
-```
-
-### workstreams sync
-```bash
-workstreams sync [OPTIONS]
-
-Options:
-  --workstream ID         Target workstream
-  --rebase                Use rebase instead of merge
-  --force                 Force sync even with local changes
-```
-
-### workstreams pr
-```bash
-workstreams pr [OPTIONS]
-
-Options:
-  --workstream ID         Source workstream
-  --title TEXT            PR title
-  --body TEXT             PR body
-  --base BRANCH           Target branch (default: main)
-  --draft                 Create draft PR
-```
-
-### workstreams merge
-```bash
-workstreams merge [OPTIONS]
-
-Options:
-  --workstream ID         Workstream to merge
-  --method METHOD         merge|squash|rebase (default: squash)
-  --delete-branch         Delete branch after merge
-  --auto                  Auto-merge when CI passes
+  --project NAME          Project name
+  --workstream ID         Show one workstream
+  --live                  Watch mode (same as monitor)
+  --once                  Single frame, exit
+  --json                  Emit JSON output
 ```
 
 ### workstreams dispatch
@@ -88,22 +49,87 @@ Options:
 workstreams dispatch [OPTIONS]
 
 Options:
-  --workstream ID         Target workstream
-  --subagent TYPE         Subagent type: backend-api|frontend-ui|database-schema|testing|documentation|security|code-quality
-  --issue NUM             GitHub issue to work on
-  --prompt TEXT           Custom prompt for subagent
+  --project NAME          Project name
+  --workstream ID         Target workstream (required)
+  --subagent IDENT        Subagent identifier: claude-code, codex, opencode,
+                          qwen-code, mimocode, hermes, kilo-code, cline, ...
+  --issue NUM             GitHub issue number (default: 0)
+  --prompt TEXT           Prompt / task description sent to the pane
+  --agent CMD             Agent binary to invoke (e.g. 'claude', 'codex')
+  --wait                  Block until subagent reports done/failed
+  --multiplexer TYPE      tmux|zellij|nami|lmux|wmux|herdr
+  --json                  Emit JSON output
 ```
 
-### workstreams logs
+### workstreams work
 ```bash
-workstreams logs [OPTIONS]
+workstreams work [OPTIONS]
 
 Options:
-  --workstream ID         Target workstream
-  --follow                Follow logs live
-  --lines N               Number of lines (default: 100)
-  --since TIME            Show logs since timestamp
-  --grep PATTERN          Filter logs
+  --project NAME          Project name
+  --workstream ID         Target workstream (required)
+  --agent CMD             Agent command (claude, codex, opencode, qwen, cline, ...)
+  --task TEXT             Task / prompt for the agent
+  --subagent IDENT        Identifier used in the event log (default: agent)
+  --issue NUM             GitHub issue number
+  --wait                  Block until terminal event
+  --multiplexer TYPE      tmux|zellij|nami|lmux|wmux|herdr
+  --json                  Emit JSON output
+```
+
+### workstreams events
+```bash
+workstreams events [OPTIONS]
+
+Options:
+  --project NAME          Project name
+  --workstream ID         Filter by workstream
+  --since MINUTES         Minutes back (default: 10)
+  --type TYPE             started|progress|completed|failed|error|done
+  --subagent IDENT        Filter by subagent name
+  --limit N               Max events to return (default: 50)
+  --clear                 Clear the event log
+  --json                  Emit JSON output
+```
+
+### workstreams event
+```bash
+workstreams event EVENT_TYPE [OPTIONS]
+
+Arguments:
+  EVENT_TYPE              started|progress|completed|failed|error|done
+
+Options:
+  --project NAME          Project name (required)
+  --workstream ID         Workstream ID (default: 0)
+  --subagent IDENT        Subagent identifier (required)
+  --issue NUM             GitHub issue number
+  --message TEXT          Message
+  --data JSON             JSON object of extra data
+  --json                  Emit JSON output
+```
+
+### workstreams notify
+```bash
+workstreams notify [OPTIONS]
+
+Options:
+  --project NAME          Project name
+  --title TEXT            Notification title (required)
+  --message TEXT          Notification message (required)
+  --urgency LEVEL         low|normal|critical (default: normal)
+  --json                  Emit JSON output
+```
+
+### workstreams assign
+```bash
+workstreams assign [OPTIONS]
+
+Options:
+  --project NAME          Project name
+  --workstream ID         Target workstream (required)
+  --issue NUM             GitHub issue number (repeatable)
+  --json                  Emit JSON output
 ```
 
 ### workstreams sync
@@ -111,19 +137,82 @@ Options:
 workstreams sync [OPTIONS]
 
 Options:
-  --workstream ID         Target workstream
+  --project NAME          Project name
+  --workstream ID         Target workstream (default: all)
   --rebase                Use rebase instead of merge
-  --strategy STRATEGY     merge|rebase|fast-forward
+  --json                  Emit JSON output
 ```
 
-### workstreams cleanup
+### workstreams pr
 ```bash
-workstreams cleanup [OPTIONS]
+workstreams pr [OPTIONS]
 
 Options:
+  --project NAME          Project name
+  --workstream ID         Source workstream (required)
+  --title TEXT            PR title (required)
+  --body TEXT             PR body
+  --base BRANCH           Target branch (default: config's base_branch)
+  --draft                 Create draft PR
+  --json                  Emit JSON output
+```
+
+### workstreams merge
+```bash
+workstreams merge [OPTIONS]
+
+Options:
+  --project NAME          Project name
+  --workstream ID         Workstream to merge (required)
+  --method METHOD         merge|squash|rebase (default: squash)
+  --delete-branch         Delete branch after merge
+  --auto                  Auto-merge when CI passes
+  --json                  Emit JSON output
+```
+
+### workstreams workstream add
+```bash
+workstreams workstream add [OPTIONS]
+
+Options:
+  --project NAME          Project name
+  --name NAME             Workstream name (required)
+  --branch BRANCH         Git branch (required)
+  --path PATH             Worktree path (default: worktrees/<name>)
+  --command CMD           Default command for this pane
+  --json                  Emit JSON output
+```
+
+### workstreams workstream remove
+```bash
+workstreams workstream remove [OPTIONS]
+
+Options:
+  --project NAME          Project name
+  --workstream ID         Workstream to remove (required)
+  --force                 Delete directory + worktree
+  --json                  Emit JSON output
+```
+
+### workstreams workstream cleanup
+```bash
+workstreams workstream cleanup [OPTIONS]
+
+Options:
+  --project NAME          Project name
   --workstream ID         Clean specific workstream
-  --all                   Clean all completed workstreams
+  --all                   Clean all workstreams
   --force                 Force cleanup without confirmation
+  --json                  Emit JSON output
+```
+
+### workstreams logs / tail / run / monitor / attach
+```bash
+workstreams logs --workstream ID [--follow] [--lines N]
+workstreams tail [--workstream ID] [--lines N]
+workstreams run --workstream ID --cmd COMMAND
+workstreams monitor [--refresh N] [--once]
+workstreams attach [--session NAME] [--multiplexer TYPE]
 ```
 
 ## Data Structures
@@ -151,15 +240,15 @@ class WorkstreamStatus:
     id: int
     name: str
     branch: str
-    status: str  # running|stopped|error|pending
-    pid: int | None
-    git_status: str  # clean|dirty|ahead|behind|diverged
+    path: str
+    git_status: str  # clean|dirty|unknown
     last_commit: str
-    last_sync: datetime | None
-    current_task: str | None
-    test_status: str  # passing|failing|running|unknown
-    coverage: float
-    last_activity: datetime
+    last_activity: str
+    pid: int | None
+    command: str
+    pane: str | None
+    log_tail: list[str]
+    alerts: list[str]
 ```
 
 ### WorkstreamsConfig
@@ -170,9 +259,11 @@ class WorkstreamsConfig:
     multiplexer: str
     layout: str
     base_branch: str
+    mode: str
     workstreams: list[WorkstreamConfig]
     shared_deps: list[str]
     base_path: str
+    agent: str  # auto|claude|codex|opencode|qwen|generic
 ```
 
 ## Git Operations
