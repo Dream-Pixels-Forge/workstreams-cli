@@ -442,10 +442,26 @@ class WorkstreamsManager:
         if not log_file.exists():
             print(f"No log file at {log_file}")
             return
-        cmd_args = ["tail", "-n", str(lines), str(log_file)]
+        # Use Python for cross-platform (tail -f equivalent on Windows)
         if follow:
-            cmd_args.insert(1, "-f")
-        subprocess.run(cmd_args, cwd=ws_path)
+            import time as _time
+            try:
+                with open(log_file, "r", encoding="utf-8", errors="replace") as f:
+                    # Seek to end, then poll
+                    f.seek(0, 2)
+                    while True:
+                        line = f.readline()
+                        if line:
+                            print(line, end="")
+                        else:
+                            _time.sleep(0.5)
+            except KeyboardInterrupt:
+                pass
+        else:
+            with open(log_file, "r", encoding="utf-8", errors="replace") as f:
+                all_lines = f.readlines()
+            for ln in all_lines[-lines:]:
+                print(ln, end="")
 
     def tail_logs(self, workstream_id: Optional[int] = None, follow: bool = True) -> None:
         ws_list = self._filter_ws(workstream_id)

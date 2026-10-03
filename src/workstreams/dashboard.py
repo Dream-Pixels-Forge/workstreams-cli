@@ -281,6 +281,14 @@ class LiveDashboard:
 
     @staticmethod
     def _find_pid(ws_path: Path, ws_name: str) -> Optional[int]:
+        """Find a PID for the workstream, cross-platform.
+
+        On POSIX: uses pgrep. On Windows: returns None (no built-in
+        process-name search without extra deps).
+        """
+        import platform
+        if platform.system() == "Windows":
+            return None
         try:
             result = subprocess.run(
                 ["pgrep", "-f", f"workstreams-{ws_name}"],
@@ -299,19 +307,18 @@ class LiveDashboard:
         log = ws_path / "logs" / "worker.log"
         if not log.exists():
             return []
+        # Cross-platform: read file and scan in Python instead of grep
         try:
-            result = subprocess.run(
-                ["grep", "-in", "error\\|fail\\|warning\\|traceback", str(log)],
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
-            if result.returncode == 0:
-                lines = [ln for ln in result.stdout.strip().split("\n") if ln]
-                return lines[-3:]
-        except (OSError, subprocess.SubprocessError):
-            pass
-        return []
+            with open(log, "r", encoding="utf-8", errors="replace") as f:
+                lines = f.readlines()
+            alerts = []
+            for i, ln in enumerate(lines, 1):
+                low = ln.lower()
+                if any(kw in low for kw in ("error", "fail", "warning", "traceback")):
+                    alerts.append(f"{i}:{ln.rstrip()}")
+            return alerts[-3:]
+        except OSError:
+            return []
 
     def _get_recent_events(self) -> List[SubagentEvent]:
         event_log = get_event_log(self.manager.config.project)

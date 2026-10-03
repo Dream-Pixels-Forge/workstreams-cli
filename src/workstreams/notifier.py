@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import os
+import platform
 import subprocess
 import sys
 from datetime import datetime, UTC
@@ -14,7 +16,6 @@ from .event_log import default_log_dir
 NOTIFY_SENDERS = [
     "notify-send",
     "terminal-notify",
-    "osascript",
 ]
 
 
@@ -30,16 +31,39 @@ class Notifier:
     def send(self, title: str, message: str, urgency: str = "normal") -> bool:
         """Send notification via desktop notification and file."""
         sent = False
-        # Try desktop notification (Linux / macOS)
-        if sys.platform == "darwin":
+        system = platform.system()
+
+        if system == "Darwin":
             script = f'display notification {json.dumps(message)} with title {json.dumps(title)}'
-            result = subprocess.run(
-                ["osascript", "-e", script],
-                capture_output=True,
-                text=True,
-                timeout=5,
+            try:
+                result = subprocess.run(
+                    ["osascript", "-e", script],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                )
+                sent = result.returncode == 0
+            except (OSError, subprocess.TimeoutExpired):
+                pass
+        elif system == "Windows":
+            # Windows: use PowerShell for desktop notification
+            ps_script = (
+                f"[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms') | Out-Null; "
+                f"$n = New-Object System.Windows.Forms.NotifyIcon; "
+                f"$n.Icon = [System.Drawing.SystemIcons]::Information; "
+                f"$n.Visible = $true; "
+                f"$n.ShowBalloonTip(5000, {json.dumps(title)}, {json.dumps(message)}, 'Info')"
             )
-            sent = result.returncode == 0
+            try:
+                subprocess.run(
+                    ["powershell", "-Command", ps_script],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                )
+                sent = True
+            except (OSError, subprocess.TimeoutExpired):
+                pass
         else:
             for sender in NOTIFY_SENDERS:
                 try:

@@ -7,6 +7,7 @@ surface is less mature than tmux's, so we use `zellij action` and
 
 from __future__ import annotations
 
+import shutil
 import subprocess
 from typing import Any, Dict, List, Optional
 
@@ -79,6 +80,25 @@ class ZellijMultiplexer(MultiplexerBase):
         )
         self._zj("run", "--", "bash", "-lc", command, check=False)
         return True
+
+    def capture(self, lines: int = 20) -> List[str]:
+        """Read the last N lines from the workstream's log file.
+
+        Zellij has no built-in pane-capture CLI like `tmux capture-pane`,
+        so we read from the per-workstream log file instead. This is the
+        most reliable cross-platform source and works even when the
+        zellij session is not attached.
+        """
+        import os
+        log_file = os.environ.get("WORKSTREAMS_ZELLIJ_LOG")
+        if not log_file:
+            return []
+        try:
+            with open(log_file, "r", encoding="utf-8", errors="replace") as f:
+                all_lines = f.readlines()
+            return [ln.rstrip("\n") for ln in all_lines[-lines:]]
+        except OSError:
+            return []
 
     def is_available(self) -> bool:
         import shutil

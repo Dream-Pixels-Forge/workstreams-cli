@@ -174,3 +174,76 @@ def test_subagent_event_from_dict_ignores_unknown_keys():
     })
     assert e.message == "hi"
     assert not hasattr(e, "weird_field")
+
+
+def test_event_log_rotation(tmp_path):
+    """When events.jsonl exceeds max_bytes, it rotates to events-<ts>.jsonl."""
+    from workstreams.event_log import EventLog, _rotate_file
+    from workstreams.models import SubagentEvent
+
+    log_dir = tmp_path / "proj"
+    log = EventLog("proj", log_dir=log_dir, max_bytes=100, max_files=50)
+
+    # Append enough events to exceed 100 bytes
+    for i in range(20):
+        e = SubagentEvent(
+            workstream_id=1,
+            subagent="test",
+            issue=0,
+            event_type="progress",
+            message=f"event number {i} with some padding text to grow the log file",
+        )
+        assert log.append(e) is True
+
+    # At least one rotated file should exist
+    rotated = log.rotated_files()
+    assert len(rotated) >= 1, "expected at least one rotated file"
+    for rf in rotated:
+        assert rf.exists()
+        assert rf.name.startswith("events-")
+        assert rf.name.endswith(".jsonl")
+
+    # With max_files=50, no pruning yet -> total across all files == 20
+    total = 0
+    for fpath in [log.events_file] + list(rotated):
+        if fpath.exists():
+            with open(fpath, "r", encoding="utf-8") as f:
+                total += sum(1 for line in f if line.strip())
+    assert total == 20, f"expected 20 total events across files, got {total}"
+
+    # clear removes all
+    log.clear()
+    assert log.get_events() == []
+    assert log.rotated_files() == []
+
+
+def test_event_log_max_files_pruning(tmp_path):
+    """Rotated files are pruned to max_files (oldest removed first)."""
+    from workstreams.event_log import EventLog, _rotate_file
+    from workstreams.models import SubagentEvent
+    import os, time
+
+    log_dir = tmp_path / "proj"
+    log_dir.mkdir()
+    log = EventLog("proj", log_dir=log_dir, max_bytes=50, max_files=3)
+
+    # Create the current events.jsonl with content exceeding max_bytes
+    # so _rotate_file actually triggers
+    with open(log.events_file, "w") as f:
+        for i in range(20):
+            f.write('{"workstream_id":1,"subagent":"x","issue":0,"event_type":"progress","message":"' + str(i) + '","timestamp":"2026-01-01T00:00:00","data":{}}\n')
+
+    # Manually create 5 fake rotated files with staggered mtimes
+    for i in range(5):
+        fake = log_dir / f"events-20260101{i:06d}.jsonl"
+        fake.write_text("{}\n")
+        os.utime(fake, (time.time() + i, time.time() + i))
+
+    rotated = log.rotated_files()
+    assert len(rotated) == 5
+
+    # Trigger rotation + pruning
+    _rotate_file(log.events_file, 50, 3)
+    # After pruning, keep newest 3 rotated files
+    rotated_after = log.rotated_files()
+    assert len(rotated_after) == 3
