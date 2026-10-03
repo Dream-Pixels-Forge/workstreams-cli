@@ -93,3 +93,33 @@ def test_subagent_report_generic(tmp_path, monkeypatch):
     assert events[0].event_type == "error"
     assert events[0].message == "boom"
     assert events[0].data == {"retry": 3}
+
+
+def test_linux_notify_autodismiss(tmp_path, monkeypatch):
+    """Linux notify-send must use --transient + --expire-time and must not
+    use critical urgency (which pins the notification open)."""
+    import platform as _platform
+    from unittest.mock import patch, MagicMock
+
+    # Force the Linux branch regardless of host
+    monkeypatch.setattr(_platform, "system", lambda: "Linux")
+    log_dir = tmp_path / "proj"
+    n = Notifier("proj", log_dir=log_dir)
+    captured = {}
+
+    def fake_run(cmd, **kwargs):
+        captured["cmd"] = cmd
+        return MagicMock(returncode=0)
+
+    with patch("workstreams.notifier.subprocess.run", side_effect=fake_run):
+        n.send("Test", "body", urgency="critical")
+
+    cmd = captured["cmd"]
+    # Must request auto-dismiss
+    assert "--transient" in cmd
+    assert "--expire-time" in cmd
+    # Critical must be downgraded to normal so it doesn't stay pinned
+    assert "critical" not in cmd
+    assert cmd.count("normal") >= 1
+    # Critical urgency gets a longer (but still finite) expiry
+    assert cmd[cmd.index("--expire-time") + 1] == "15000"

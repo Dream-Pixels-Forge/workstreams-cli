@@ -65,19 +65,40 @@ class Notifier:
             except (OSError, subprocess.TimeoutExpired):
                 pass
         else:
-            for sender in NOTIFY_SENDERS:
+            # Linux: notify-send. Use --transient + --expire-time so the
+            # notification auto-dismisses instead of staying open. Critical
+            # urgency notifications are modal/blocking by spec — downgrade
+            # them and rely on expire-time so they don't pin forever.
+            effective_urgency = "normal" if urgency == "critical" else urgency
+            expire_ms = 15000 if urgency == "critical" else 8000
+            cmd = [
+                "notify-send",
+                "--transient",
+                "--expire-time", str(expire_ms),
+                "-u", effective_urgency,
+                title,
+                message,
+            ]
+            try:
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                )
+                sent = result.returncode == 0
+            except (OSError, subprocess.TimeoutExpired):
+                # Fallback: terminal-notify writes to stdout of the terminal
                 try:
                     result = subprocess.run(
-                        [sender, "-u", urgency, title, message],
+                        ["terminal-notify", title, message],
                         capture_output=True,
                         text=True,
                         timeout=5,
                     )
-                    if result.returncode == 0:
-                        sent = True
-                        break
+                    sent = result.returncode == 0
                 except (OSError, subprocess.TimeoutExpired):
-                    continue
+                    pass
 
         # Always write to notification file for other instances to pick up
         notif = {
