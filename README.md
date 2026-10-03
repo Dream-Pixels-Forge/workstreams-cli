@@ -588,6 +588,5 @@ workstreams-cli/
 - License: **MIT**
 - Author: **Dream-Pixels-Forge**
 - Development: `pip install -e ".[yaml,dev]"` then `pytest` (testpaths `tests`, pythonpath `src`)
-- Releasing: publish a GitHub **Release**; CI (OIDC trusted publishing) builds and publishes to PyPI automatically.
 
 **Project page:** https://github.com/Dream-Pixels-Forge/workstreams-cli
