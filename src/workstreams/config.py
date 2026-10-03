@@ -47,19 +47,28 @@ def load_config(
     """
     base_path = (base_path or Path.cwd()).resolve()
     config_file = config_path_in(base_path)
+    # Fall back to the JSON config if YAML is not present (no-pyyaml installs)
+    if not config_file.exists():
+        json_fallback = config_file.with_suffix(".json")
+        if json_fallback.exists():
+            config_file = json_fallback
     data: Dict[str, Any] = {}
     if config_file.exists():
         try:
             text = config_file.read_text()
-            parsed = _yaml_load(text)
-            if parsed is not None:
-                data = parsed
+            if config_file.suffix == ".json":
+                parsed = json.loads(text)
+                data = parsed if isinstance(parsed, dict) else {}
             else:
-                # Fallback parser for simple YAML (no pyyaml installed)
-                parsed = _simple_yaml_load(text)
+                parsed = _yaml_load(text)
                 if parsed is not None:
                     data = parsed
-        except OSError:
+                else:
+                    # Fallback parser for simple YAML (no pyyaml installed)
+                    parsed = _simple_yaml_load(text)
+                    if parsed is not None:
+                        data = parsed
+        except (OSError, json.JSONDecodeError):
             data = {}
 
     workstreams = [

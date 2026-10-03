@@ -67,6 +67,40 @@ def test_load_nonexistent_returns_default_project(tmp_path):
     assert loaded.multiplexer == "tmux"
 
 
+def test_load_json_when_no_yaml_present(tmp_path):
+    """Regression: when the on-disk config is .json (no pyyaml), load_config
+    must still read it back instead of silently defaulting to 0 workstreams.
+
+    This is the path that caused `start` to create a misnamed session with a
+    `wsNone` window: the workstream list was empty because the JSON file was
+    never consulted."""
+    cfg = _make_config(n=2)
+    project_dir = tmp_path / "jsonproj"
+    project_dir.mkdir()
+    # Save with pyyaml (writes .yaml), then remove the .yaml so only .json
+    # semantics remain — emulate an install without pyyaml.
+    saved = save_config(cfg, project_dir)
+    json_fallback = project_dir / ".workstreams.json"
+    if saved.suffix == ".yaml":
+        # Convert: write the equivalent JSON and drop the YAML so the loader
+        # is forced down the .json branch.
+        import json as _json
+        data = _json.loads(_json.dumps(cfg.to_dict()))
+        json_fallback.write_text(_json.dumps(data, indent=2) + "\n")
+        saved.unlink()
+    else:
+        json_fallback = saved
+
+    loaded = load_config(project_dir, "testproj")
+    assert loaded is not None
+    assert loaded.project == "testproj"
+    assert len(loaded.workstreams) == 2, (
+        f"expected 2 workstreams from JSON config, got {len(loaded.workstreams)}"
+    )
+    assert loaded.workstreams[0].name == "ws1"
+    assert loaded.workstreams[1].branch == "ws/2"
+
+
 def test_load_from_json_fallback(tmp_path):
     """When pyyaml is unavailable the config is saved as .json and must still load."""
     cfg = _make_config(n=1)

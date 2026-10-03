@@ -180,7 +180,13 @@ class TmuxMultiplexer(MultiplexerBase):
                 flush=True,
             )
             return False
+        # Try the named window first; if tmux can't resolve that target
+        # (stale name, or a session created outside workstreams), fall back
+        # to the numeric window index so dispatches don't silently no-op.
         result = self._tmux("send-keys", "-t", target, command, "Enter")
+        if result.returncode != 0:
+            fallback = f"{self.session}:{workstream_id - 1}"
+            result = self._tmux("send-keys", "-t", fallback, command, "Enter")
         return result.returncode == 0
 
     def capture(self, workstream_id: int, lines: int = 20) -> str:
