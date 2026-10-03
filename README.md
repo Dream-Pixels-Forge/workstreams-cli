@@ -15,6 +15,14 @@ Key capabilities:
 - **Cross-terminal notifications** — desktop notifications (Linux `notify-send`, macOS `osascript`) plus a shared `notifications.jsonl` that other terminals can poll
 - **Agent-agnostic** — no vendor lock-in. `dispatch` and `work` send arbitrary shell commands to panes, so it works with whatever agent binary you can run from a shell
 
+## ⭐ If workstreams helps you ship faster, star the repo
+
+If you found this useful, a GitHub star helps other developers discover it.
+
+[![Star on GitHub](https://img.shields.io/github/stars/Dream-Pixels-Forge/workstreams-cli?style=social)](https://github.com/Dream-Pixels-Forge/workstreams-cli)
+
+⭐ **Star this repo:** [github.com/Dream-Pixels-Forge/workstreams-cli](https://github.com/Dream-Pixels-Forge/workstreams-cli)
+
 ## Why this exists
 
 Coding agents increasingly support "subagents" that run in the background of the main agent's process. That means: no visibility (you can't watch them), no isolation (they share one working tree and one set of installed dependencies), no way to run several in parallel on independent branches, and no shared event stream you can watch from your main terminal.
@@ -31,6 +39,7 @@ Coding agents increasingly support "subagents" that run in the background of the
 - [Configuration (.workstreams.yaml)](#configuration-workstreamsyaml)
 - [How the Multiplexers Work](#how-the-multiplexers-work)
 - [Subagent Event System (Python API + CLI)](#subagent-event-system)
+- [Confidence Scoring](#confidence-scoring)
 - [Environment Variables](#environment-variables)
 - [Exit Codes](#exit-codes)
 - [Data Locations](#data-locations)
@@ -75,7 +84,7 @@ pip install -e ".[yaml,dev]"   # dev extras add pytest
 Verify:
 
 ```bash
-workstreams --version   # -> workstreams 0.5.1
+workstreams --version   # -> workstreams 0.6.0
 ```
 
 > **Note:** every command also accepts `--json` to emit machine-readable output (where supported), which coding agents can parse. All read-side commands work without a multiplexer installed; only `start`/`dispatch`/`work`/`attach` need one.
@@ -406,6 +415,67 @@ Events are appended to `~/.workstreams/<project>/events.jsonl` using `O_APPEND` 
 
 ---
 
+## Confidence Scoring
+
+Subagents are sometimes wrong. Confidence scoring lets each subagent **self-rate the quality of its result on a 0–10 scale** so the main agent (or a CI gate) can decide whether to accept, re-dispatch, or escalate. It is the difference between "subagent said it's done" and "subagent is 9/10 sure it actually delivered the right result".
+
+- The score rides in the event's `data.confidence` field — no new storage required.
+- A **gate** (`workstreams confidence --min-score N`) exits `0` when the latest score is at/above the threshold and `1` otherwise, so it drops straight into CI or a `--wait` loop.
+- Scores are clamped to `[0, 10]`; a misbehaving subagent can't emit `100`.
+
+### Emitting a score
+
+```bash
+# a subagent reports it finished, 9/10 confident
+workstreams event completed --project myproj --workstream 1 \
+    --subagent claude-code --issue 42 \
+    --message "All tests green, edge cases covered" \
+    --confidence 9
+
+# or via --data JSON
+workstreams event completed --project myproj --workstream 1 \
+    --subagent codex --issue 42 --message "Done" --data '{"confidence": 7}'
+
+# Python API (in a subagent script)
+from workstreams import subagent_report
+subagent_report("myproj", 1, "claude-code", 42, "completed", "Done",
+                data={"confidence": 9})
+```
+
+### Reading / gating on scores
+
+```bash
+# human-readable summary + gate (exit 0 if latest >= 8)
+workstreams confidence --project myproj --workstream 1 --issue 42 --min-score 8
+
+# machine-readable
+workstreams confidence --project myproj --workstream 1 --json
+
+# list every confidence-bearing event, oldest first
+workstreams confidence --project myproj --workstream 1 --records
+```
+
+Example output:
+
+```
+Confidence for ws1 #42: PASS
+  latest: 9.0/10 (completed from claude-code)
+  average: 7.0/10 over 2 report(s)
+  threshold: 8.0/10 -> All tests green, edge cases covered
+```
+
+### Using it as a CI / re-dispatch gate
+
+```bash
+# block the merge until the subagent's latest self-rating clears the bar
+workstreams confidence --project myproj --workstream 1 --issue 42 --min-score 9 \
+  || { echo "confidence too low, re-dispatching"; workstreams dispatch ...; }
+```
+
+> Scores are self-reported. Treat them as a *signal*, not a proof — pair them with real test coverage. A 10/10 that shipped a broken build is still a broken build.
+
+---
+
 ## Environment Variables
 
 All are overridable in the config file / CLI; env vars are a fallback when neither is set.
@@ -561,57 +631,21 @@ workstreams logs --workstream 1 --lines 50
 
 ## Architecture
 
-`workstreams` is a thin orchestration layer that sits between you, your git repo, a terminal multiplexer, and any coding agent binary. The core parts and how they fit together:
+`workstreams` is a thin orchestration layer that sits between you, your git repo, a terminal multiplexer, and any coding agent binary.
 
-```
-                 you / your main terminal / a CI job / a cron
-                                   │  CLI (argparse)
-                                   ▼
-        ┌─────────────────────────────────────────────────────────┐
-        │                  cli.py  (entry: workstreams)          │
-        └─────────────────────────────────────────────────────────┘
-        │  command routing          │  config resolution (flag > yaml > env > default)
-        ▼                            ▼
-┌──────────────────────┐   ┌──────────────────────┐
-│  WorkstreamsManager  │   │  config.py            │
-│  (manager.py)        │◄──│  .workstreams.yaml /  │
-│  init·start·dispatch │   │  .json load+save,     │
-│  work·sync·pr·merge· │   │  no-pyyaml fallback   │
-│  run·logs·events     │   └──────────────────────┘
-└──────┬───────────────┘
-       │
-   ┌───┴──────────────────────────────────────────────┐
-   │                                                    │
-   ▼                                                    ▼
-┌────────────────────────────┐          ┌────────────────────────────┐
-│  multiplexer/  (backends)  │          │  event_log.py  +           │
-│  tmux.py / zellij.py       │          │  subagent_client.py        │
-│  MultiplexerBase:          │          │  (Python API emitters)     │
-│   create_session, send_    │          │                            │
-│   command, list_sessions…  │          │  NOTIFIER                  │
-└─────────────┬──────────────┘          │  (notifier.py): desktop    │
-              │ send-keys / tabs        │  notify-send/osascript +   │
-              ▼                         │  notifications.jsonl       │
-      visible terminal panes ◄──────────┤                            │
-      (one per workstream lane)        └────────────────────────────┘
-              │ each pane runs its own agent (claude, codex, …)
-              │ agent appends JSONL events back
-              ▼
-┌──────────────────────────────────────────────────────────────┐
-│  ~/.workstreams/<project>/                                   │
-│    events.jsonl     shared, concurrent-safe event stream     │
-│    notifications.jsonl   cross-terminal notification queue  │
-└──────────────────────────────────────────────────────────────┘
-              ▲
-              │ re-render every 2s (configurable)
-┌────────────────────────────┐
-│  dashboard.py             │
-│  LiveDashboard: ANSI TUI  │  ◄── the only read-side that polls events live
-└────────────────────────────┘
+![workstreams architecture](https://github.com/Dream-Pixels-Forge/workstreams-cli/raw/main/assets/workstreams-architecture.webp)
 
-models.py defines the dataclasses (WorkstreamConfig, WorkstreamsConfig,
-WorkstreamStatus, SubagentEvent) shared across all of the above.
-```
+The diagram above shows the full data flow: the CLI routes each command to `WorkstreamsManager`, which talks to a pluggable multiplexer backend to place agents into visible terminal panes, while every lane's subagent writes JSONL events back to a shared, concurrent-safe log that the live dashboard re-renders on a timer. The core modules:
+
+- **`cli.py`** — argparse entry point; every command accepts `--project` and `--json`
+- **`manager.py`** — `WorkstreamsManager` orchestrates init/start/dispatch/work/sync/pr/merge/run/logs/events
+- **`config.py`** — loads/saves `.workstreams.yaml` (or JSON) with no-pyyaml fallback; resolution order: CLI flag > yaml > env > default
+- **`multiplexer/`** — pluggable backends behind `MultiplexerBase` (`tmux.py`, `zellij.py`, plus tmux-compatible wrappers for `nami`/`lmux`/`wmux`/`herdr`)
+- **`event_log.py` + `subagent_client.py`** — shared cross-process JSONL event stream and the Python API emitters
+- **`notifier.py`** — desktop notifications (`notify-send`/`osascript`/PowerShell) plus a `notifications.jsonl` queue
+- **`confidence.py`** — aggregates subagent self-rated 0–10 quality scores for accept / re-dispatch gating
+- **`dashboard.py`** — the live ANSI TUI that polls events and re-renders every 2s
+- **`models.py`** — dataclasses (`WorkstreamConfig`, `WorkstreamsConfig`, `WorkstreamStatus`, `SubagentEvent`) shared across all of the above
 
 How a run flows end-to-end:
 

@@ -208,7 +208,17 @@ def build_parser() -> argparse.ArgumentParser:
     event.add_argument("--issue", type=int, default=0)
     event.add_argument("--message", default="")
     event.add_argument("--data", help="JSON object of extra data (e.g. '{\"files\": 3}')")
+    event.add_argument("--confidence", type=float, default=None, help="Self-rated result quality 0-10 (stored in data.confidence)")
     event.add_argument("--json", action="store_true")
+
+    # confidence (aggregate / gate on subagent self-ratings)
+    confidence = common_parent("confidence")
+    confidence.add_argument("--workstream", type=int, help="Restrict to one workstream")
+    confidence.add_argument("--issue", type=int, help="Restrict to one issue")
+    confidence.add_argument("--subagent", help="Filter by subagent name")
+    confidence.add_argument("--since", type=int, default=43200, help="Minutes back (default: 30 days)")
+    confidence.add_argument("--min-score", type=float, default=8.0, help="Pass threshold for the gate (default: 8.0)")
+    confidence.add_argument("--records", action="store_true", help="List individual confidence-bearing events")
 
     # notify
     notify = common_parent("notify")
@@ -412,6 +422,8 @@ def _cmd_event(args) -> int:
         except json.JSONDecodeError:
             print(f"Invalid --data JSON: {args.data}", file=sys.stderr)
             return 2
+    if getattr(args, "confidence", None) is not None:
+        data["confidence"] = args.confidence
     ok = subagent_report(
         project=args.project,
         workstream_id=args.workstream,
@@ -429,6 +441,73 @@ def _cmd_event(args) -> int:
         else:
             print("failed to write event", file=sys.stderr)
     return 0 if ok else 1
+
+
+def _cmd_confidence(args) -> int:
+    """Aggregate / gate on subagent self-rated confidence scores."""
+    from .confidence import get_confidence, confidence_records, clamp_score
+
+    # clamp the threshold so a bogus --min-score can't break the gate
+    min_score = clamp_score(args.min_score)
+    if min_score is None:
+        print(f"Invalid --min-score: {args.min_score}", file=sys.stderr)
+        return 2
+
+    # The event log is keyed by project, but confidence read commands are
+    # project-scoped like the rest of the read side; fall back to .workstreams.yaml
+    # if no --project was given.
+    import os
+    from .config import load_config
+    project = getattr(args, "project", None)
+    if not project:
+        cfg = load_config(Path.cwd())
+        project = cfg.project
+
+    if args.records:
+        records = confidence_records(
+            project=project,
+            workstream_id=args.workstream,
+            issue=args.issue,
+            subagent=args.subagent,
+            since_minutes=args.since,
+        )
+        if args.json:
+            print(json.dumps([r.to_dict() for r in records], indent=2, default=str))
+            return 0
+        if not records:
+            print(f"(no confidence reports in last {args.since} min)")
+            return 0
+        for r in records:
+            ts = r.timestamp[11:19]
+            print(f"[{ts}] [{r.subagent}] ws{r.workstream_id} #{r.issue} - {r.event_type}: {r.score}/10 {r.message}")
+        return 0
+
+    summary = get_confidence(
+        project=project,
+        workstream_id=args.workstream,
+        issue=args.issue,
+        subagent=args.subagent,
+        since_minutes=args.since,
+        min_score=min_score,
+    )
+    if args.json:
+        print(json.dumps(summary.to_dict(), indent=2, default=str))
+        return 0 if summary.passed else 1
+
+    scope = f"ws{args.workstream}" if args.workstream else "project"
+    if args.issue:
+        scope += f" #{args.issue}"
+    if summary.n_reports == 0:
+        print(f"No confidence reports for {scope} yet.")
+        return 1
+    avg = f"{summary.avg_score:.1f}" if summary.avg_score is not None else "n/a"
+    latest = f"{summary.latest_score:.1f}" if summary.latest_score is not None else "n/a"
+    mark = "PASS" if summary.passed else "FAIL"
+    print(f"Confidence for {scope}: {mark}")
+    print(f"  latest: {latest}/10 ({summary.latest_event_type} from {summary.latest_subagent})")
+    print(f"  average: {avg}/10 over {summary.n_reports} report(s)")
+    print(f"  threshold: {min_score}/10 -> {summary.latest_message}")
+    return 0 if summary.passed else 1
 
 
 def _cmd_notify(args) -> int:
@@ -472,6 +551,7 @@ HANDLERS = {
     "tail": _cmd_tail,
     "events": _cmd_events,
     "event": _cmd_event,
+    "confidence": _cmd_confidence,
     "notify": _cmd_notify,
     "assign": _cmd_assign,
     "sync": _cmd_sync,

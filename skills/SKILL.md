@@ -1,7 +1,7 @@
 ---
 name: workstreams
 description: Manage parallel development workstreams across terminal multiplexers (tmux, zellij, nami, lmux, wmux, herdr, tmuxp, zed, neovim terminals). Includes live monitoring dashboard, cross-process subagent event logging, and cross-terminal notifications.
-version: 0.5.1
+version: 0.6.0
 author: Dream-Pixels-Forge
 license: MIT
 platforms: [linux, macos]
@@ -198,6 +198,34 @@ Events are stored in `~/.workstreams/<project>/events.jsonl` and visible in:
 - `workstreams monitor` (live dashboard)
 - `workstreams events` (CLI)
 - `workstreams status --live` (legacy)
+
+### Confidence Scoring (NEW)
+
+Let subagents self-rate result quality on a 0-10 scale so the main agent / CI gate
+can decide whether to accept, re-dispatch, or escalate. Scores ride in `data.confidence`.
+
+```bash
+# subagent reports a high-confidence completion
+workstreams event completed --project myproject --workstream 1 \
+  --subagent claude-code --issue 42 \
+  --message "All tests green" --confidence 9
+
+# gate: exit 0 only if latest score >= 8
+workstreams confidence --project myproject --workstream 1 --issue 42 --min-score 8
+
+# machine-readable + list of individual scored events
+workstreams confidence --project myproject --workstream 1 --json
+workstreams confidence --project myproject --workstream 1 --records
+```
+
+Use it as a re-dispatch loop:
+
+```bash
+workstreams confidence --project myproject --workstream 1 --issue 42 --min-score 9 \
+  || workstreams dispatch --workstream 1 --subagent claude-code --issue 42 --prompt "retry: not confident enough"
+```
+
+> Scores are self-reported — treat as a signal, not proof. Pair with real test coverage.
 
 ## Integration with subagent-driven-development
 

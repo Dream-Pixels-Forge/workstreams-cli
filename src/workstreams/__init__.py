@@ -33,8 +33,16 @@ from .subagent_client import (
     subagent_done,
 )
 from .multiplexer import MultiplexerBase, TmuxMultiplexer, ZellijMultiplexer, get_multiplexer
+from .confidence import (
+    ConfidenceRecord,
+    ConfidenceSummary,
+    get_confidence,
+    confidence_records,
+    clamp_score,
+    extract_score,
+)
 
-__version__ = "0.5.1"
+__version__ = "0.6.0"
 
 __all__ = [
     # models
@@ -68,4 +76,11 @@ __all__ = [
     "TmuxMultiplexer",
     "ZellijMultiplexer",
     "get_multiplexer",
+    # confidence scoring
+    "ConfidenceRecord",
+    "ConfidenceSummary",
+    "get_confidence",
+    "confidence_records",
+    "clamp_score",
+    "extract_score",
 ]
