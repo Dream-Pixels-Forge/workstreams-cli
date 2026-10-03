@@ -39,7 +39,7 @@ class WorkstreamsConfig:
     """Project-level configuration."""
 
     project: str
-    multiplexer: str = "tmux"
+    multiplexer: str = "default"  # "default" = auto-detect platform best
     layout: str = "even-horizontal"
     base_branch: str = "main"
     mode: str = "worktree"  # worktree|branch

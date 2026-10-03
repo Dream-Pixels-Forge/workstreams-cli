@@ -84,7 +84,7 @@ pip install -e ".[yaml,dev]"   # dev extras add pytest
 Verify:
 
 ```bash
-workstreams --version   # -> workstreams 0.6.1
+workstreams --version   # -> workstreams 0.6.2
 ```
 
 > **Note:** every command also accepts `--json` to emit machine-readable output (where supported), which coding agents can parse. All read-side commands work without a multiplexer installed; only `start`/`dispatch`/`work`/`attach` need one.
@@ -109,10 +109,36 @@ The terminal tool that hosts the visible windows. `workstreams` currently suppor
 
 | Multiplexer | Layouts | Notes |
 |-------------|---------|-------|
-| `tmux` (default) | `even-horizontal`, `even-vertical`, `main-horizontal`, `tiled` | One **window per workstream** (cleanest for agents), or all in one tiled window. Detached sessions survive your logout. |
+| `default` (auto-detect) | per backend | **Picks the best multiplexer installed for your OS**: `tmux` on macOS, `lmux` on Linux, `wmux` on Windows — falling back to `zellij` when the platform primary is missing. This is now the out-of-the-box behaviour. |
+| `tmux` | `even-horizontal`, `even-vertical`, `main-horizontal`, `tiled` | One **window per workstream** (cleanest for agents), or all in one tiled window. Detached sessions survive your logout. |
 | `zellij` | tabs | One **tab per workstream**. Simpler scripting surface; `dispatch` targets the current tab only. |
+| `nami` / `lmux` / `wmux` / `herdr` | tmux-compatible | tmux-compatible CLIs wrapped by `TmuxCompatibleMultiplexer`. |
 
-The tmux/zellij session is auto-named `workstreams-<project>`.
+**Auto-detect** — you normally don't pick one. `load_config` resolves the
+platform default at startup:
+
+```
+macOS   → tmux first, then zellij, nami, lmux, wmux
+Linux   → lmux first, then zellij, then tmux
+Windows → wmux first, then lmux, zellij, tmux
+```
+
+The first *installed* binary in that list wins — **and** for the
+tmux-compatible wrapper family (`nami` / `lmux` / `wmux` / `herdr`)
+workstreams validates that the binary actually exposes tmux-style verbs
+(`new-session` / `send-keys` / …) before committing. For example `lmux`
+v1 has a completely different CLI shape (`workspace.create`,
+`surface.send-key`) so the validator rejects it and auto-detect falls
+through to `zellij` or `tmux`. If you *know* your `lmux` build exposes
+the tmux dialect, pin it explicitly with `multiplexer: lmux` — the
+validator is only consulted on the `default` auto-pick path. If you want a specific one:
+
+- Set it in your `.workstreams.yaml` / `.json`: `multiplexer: zellij`
+- Or pass `--multiplexer zellij` on `init` / `start` / `dispatch` / `work`
+- Or run `workstreams init --choose` to interactively pick, which persists the
+  choice into your config file so later commands use it.
+
+The tmux/zellij/lmux/wmux session is auto-named `workstreams-<project>`.
 
 ### 3. Subagent
 The coding agent doing the work inside a workstream. This is deliberately **free-form**: `claude-code`, `codex`, `opencode`, `qwen-code`, `mimocode`, `hermes`, `kilo-code`, `cline`, or any label you want. There is no vendor lock-in — a subagent is just an identifier used in the event log. The agent that actually runs is whatever command you send into the pane (see `dispatch`/`work`).

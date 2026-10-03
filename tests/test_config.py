@@ -64,7 +64,11 @@ def test_load_nonexistent_returns_default_project(tmp_path):
     loaded = load_config(project_dir, "fallback-proj")
     assert loaded is not None
     assert loaded.project == "fallback-proj"
-    assert loaded.multiplexer == "tmux"
+    # A bare load now auto-resolves the platform default multiplexer (e.g.
+    # lmux on Linux), so assert it's a *concrete* name, not the "default"
+    # sentinel.
+    assert loaded.multiplexer != "default"
+    assert loaded.multiplexer in {"tmux", "zellij", "lmux", "wmux", "nami", "herdr"}
 
 
 def test_load_json_when_no_yaml_present(tmp_path):

@@ -98,7 +98,8 @@ def build_parser() -> argparse.ArgumentParser:
     # init
     init = common_parent("init")
     init.add_argument("--workstreams", type=int, default=4, help="Number of workstreams to create (default: 4)")
-    init.add_argument("--multiplexer", choices=["tmux", "zellij", "nami", "lmux", "wmux", "herdr"], default=None, help="Multiplexer type")
+    init.add_argument("--multiplexer", choices=["default", "tmux", "zellij", "nami", "lmux", "wmux", "herdr"], default=None, help="Multiplexer type ('default' = auto-detect: tmux/mac, lmux/linux, wmux/win)")
+    init.add_argument("--choose", action="store_true", help="Interactively pick the multiplexer (writes choice to .workstreams.yaml)")
     init.add_argument("--layout", choices=["even-horizontal", "even-vertical", "main-horizontal", "tiled"], default=None)
     init.add_argument("--base-branch", default=None, help="Base branch (default: main)")
     init.add_argument("--mode", choices=["worktree", "branch"], default=None, help="worktree (isolated) or branch (shared dir)")
@@ -110,12 +111,12 @@ def build_parser() -> argparse.ArgumentParser:
     start = common_parent("start")
     start.add_argument("--workstream", type=int, help="Start a single workstream by ID")
     start.add_argument("--cmd", help="Override the command sent to each pane")
-    start.add_argument("--multiplexer", choices=["tmux", "zellij", "nami", "lmux", "wmux", "herdr"], default=None)
+    start.add_argument("--multiplexer", choices=["default", "tmux", "zellij", "nami", "lmux", "wmux", "herdr"], default=None)
     start.add_argument("--layout", choices=["even-horizontal", "even-vertical", "main-horizontal", "tiled"], default=None)
 
     # attach
     attach = common_parent("attach")
-    attach.add_argument("--multiplexer", choices=["tmux", "zellij", "nami", "lmux", "wmux", "herdr"], default=None)
+    attach.add_argument("--multiplexer", choices=["default", "tmux", "zellij", "nami", "lmux", "wmux", "herdr"], default=None)
     attach.add_argument("--session", help="Override session name")
 
     # status
@@ -162,7 +163,7 @@ def build_parser() -> argparse.ArgumentParser:
     dispatch.add_argument("--prompt", help="Prompt / task description sent to the pane")
     dispatch.add_argument("--agent", help="Agent binary to invoke (e.g. 'claude', 'codex', 'opencode run'). If omitted, sends --prompt verbatim to the pane.")
     dispatch.add_argument("--wait", action="store_true", help="Block until subagent reports done/failed")
-    dispatch.add_argument("--multiplexer", choices=["tmux", "zellij", "nami", "lmux", "wmux", "herdr"], default=None)
+    dispatch.add_argument("--multiplexer", choices=["default", "tmux", "zellij", "nami", "lmux", "wmux", "herdr"], default=None)
 
     # work (run agent command directly)
     work = common_parent("work")
@@ -172,7 +173,7 @@ def build_parser() -> argparse.ArgumentParser:
     work.add_argument("--subagent", default="agent", help="Identifier used in event log")
     work.add_argument("--issue", type=int, default=0)
     work.add_argument("--wait", action="store_true", help="Block until terminal event")
-    work.add_argument("--multiplexer", choices=["tmux", "zellij", "nami", "lmux", "wmux", "herdr"], default=None)
+    work.add_argument("--multiplexer", choices=["default", "tmux", "zellij", "nami", "lmux", "wmux", "herdr"], default=None)
 
     # run
     run = common_parent("run")
@@ -266,6 +267,13 @@ def _cmd_init(args) -> int:
         manager.config.mode = args.mode
     if args.agent:
         manager.config.agent = args.agent
+    # Interactive picker: ask the user which multiplexer to persist,
+    # then write it to the config file.
+    if getattr(args, "choose", False):
+        from .multiplexer import resolve_default_multiplexer
+        chosen = resolve_default_multiplexer(interactive=True)
+        manager.config.multiplexer = chosen
+        print(f"Multiplexer: {chosen} (persisted to config)")
     if args.no_worktrees:
         # Skip git worktree creation; just write config
         from .models import WorkstreamConfig

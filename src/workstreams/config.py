@@ -80,9 +80,17 @@ def load_config(
     if not project:
         project = base_path.name or "myproject"
 
+    # Resolve the multiplexer: explicit config/env value wins; the literal
+    # string "default" (or absence) auto-detects the best installed
+    # multiplexer for this platform (tmux/mac, lmux/linux, wmux/win).
+    multiplexer = data.get("multiplexer") or os.environ.get("WORKSTREAMS_MULTIPLEXER") or "default"
+    if multiplexer == "default":
+        from .multiplexer import resolve_default_multiplexer
+        multiplexer = resolve_default_multiplexer(interactive=False)
+
     return WorkstreamsConfig(
         project=project,
-        multiplexer=data.get("multiplexer") or os.environ.get("WORKSTREAMS_MULTIPLEXER") or "tmux",
+        multiplexer=multiplexer,
         layout=data.get("layout") or os.environ.get("WORKSTREAMS_LAYOUT") or "even-horizontal",
         base_branch=data.get("base_branch") or os.environ.get("WORKSTREAMS_BASE_BRANCH") or "main",
         mode=data.get("mode") or os.environ.get("WORKSTREAMS_WORKTREE_MODE") or "worktree",
