@@ -1,34 +1,41 @@
 """Native wmux multiplexer.
 
-wmux is an Electron GUI terminal multiplexer whose only control surface is a
-JSON-RPC endpoint — it is NOT tmux-compatible, and driving it through the
-tmux-compat shim hangs forever (every ``wmux <verb>`` invocation launches the
-GUI and blocks). This module speaks the real wmux dialect directly:
+wmux is an Electron GUI terminal multiplexer with NO usable CLI (every
+``wmux <verb>`` launches the GUI and blocks), so it must be driven over its
+daemon sockets. Protocol verified live against wmux 3.66.0:
 
-Transport
-    Unix socket ``~/.wmux.sock`` (``$WMUX_SOCKET_PATH`` / ``$WMUX_DATA_SUFFIX``
-    variants), token from ``~/.wmux-auth-token`` (``$WMUX_AUTH_TOKEN``).
-    Newline-delimited JSON: request ``{"id", "method", "params", "token",
-    "clientName", "clientVersion"}`` -> response ``{"id", "ok", "result" |
-    "error", "rejection"?}``. EVERY socket call sets a timeout.
-
-Handshake (required before any method works)
-    1. ``mcp.identify {name, version}``
-    2. ``mcp.declarePermissions {permissions: [...]}`` — capability-first, no
-       reserved ``wmux.internal``. First use of a new capability may return
-       "awaiting user approval (promptId=...)": a one-time human approval in
-       the wmux window; we retry until granted (bounded).
+Control pipe
+    ``$WMUX_SOCKET_PATH`` > ``~/.wmux{suffix}/daemon.sock`` >
+    ``~/.wmux{suffix}.sock`` > ``~/.wmux-daemon{suffix}.sock``.
+    Newline-delimited JSON: request ``{"id", "method", "params", "token"}``
+    -> one line ``{"id", "ok", "result" | "error"}``. The token travels per
+    frame (``$WMUX_AUTH_TOKEN`` > ``~/.wmux{suffix}/daemon-auth-token`` >
+    ``~/.wmux-auth-token``); a wrong token yields
+    ``{"ok": false, "error": "unauthorized"}`` plus a closed socket. There is
+    NO handshake and no approval prompt — third-party tokens may call the
+    session lifecycle methods directly. EVERY call sets a timeout, and
+    connection drops are retried (the daemon rate-limits ~20 conns/s).
 
 Workstream mapping
-    tmux windows <-> wmux panes, labeled via ``pane.setMetadata``; dispatch =
-    ``input.send`` to the pane's ptyId. The workstream->pane map is persisted
-    as JSON so later ``dispatch``/``capture`` invocations target the same panes.
+    tmux windows <-> wmux sessions ``ws-<project>-<n>`` created with
+    ``daemon.createSession`` (a persistent shell, like tmux ``exec bash -i``).
+    Commands are typed into the session's pty the tmux send-keys way, so the
+    session outlives them. Input uses the per-session pipe
+    ``~/.wmux{suffix}/session-<id>.sock``: connect, send ``<token>\\n``, read
+    until the ``\\0WMUX_FLUSH_DONE:<token>\\0`` marker, then write the command
+    (bytes after the auth line go STRAIGHT to the pty — append ``\\n`` to
+    submit). The pipe accepts ONE client: if the pane is open in the GUI the
+    dispatch fails with a clear error. Capture reads ``daemon.readSessionText``
+    (no pipe needed). The workstream->session map is persisted as JSON, the
+    same pattern as lmux.
 """
 
 from __future__ import annotations
 
 import json
 import os
+import re
+import shlex
 import shutil
 import socket
 import sys
@@ -38,52 +45,76 @@ from typing import Any, Dict, List, Optional
 
 from .base import MultiplexerBase
 
-CLIENT_NAME = "workstreams"
+#: Daemon contract for session ids (spawnSession + assertExternalSessionId).
+#: The ``auto-`` prefix is reserved for scheduled runs — our ``ws-`` is safe.
+SESSION_ID_RE = re.compile(r"^[a-zA-Z0-9_-]{1,64}$")
 
-#: Capabilities workstreams needs. ``wmux.internal`` is reserved and fails
-#: the whole call, so it must never appear here.
-PERMISSIONS = [
-    "workspace.read",
-    "pane.read",
-    "pane.write",
-    "pane.create",
-    "terminal.send",
-    "terminal.read",
-    "meta.write",
-]
-
-_LABEL_MAX = 64
-_APPROVAL_POLL_SECONDS = 0.5
-_APPROVAL_MAX_ATTEMPTS = 60  # bounded: never hang forever waiting for a human
+_FLUSH_TIMEOUT = 5.0
+_PIPE_CONNECT_ATTEMPTS = 3
+_PIPE_RETRY_SLEEP = 0.35
+_ATTACH_POLL_SECONDS = 1.5
+_CONTROL_CONNECT_ATTEMPTS = 3
 
 
-def _client_version() -> str:
-    try:
-        from workstreams import __version__
-        return __version__
-    except Exception:
-        return "0"
+def _wmux_home() -> str:
+    suffix = os.environ.get("WMUX_DATA_SUFFIX", "")
+    return os.path.join(os.path.expanduser("~"), f".wmux{suffix}")
 
 
 def default_socket_path() -> str:
-    """Return the wmux RPC socket path for the current user."""
+    """Return the wmux control-pipe path for the current user.
+
+    Env override wins; otherwise prefer the live daemon socket, falling back
+    to the legacy pipe names. When no candidate exists, return the primary
+    path so error messages point somewhere sensible.
+    """
     env = os.environ.get("WMUX_SOCKET_PATH")
     if env:
         return env
+    home = os.path.expanduser("~")
     suffix = os.environ.get("WMUX_DATA_SUFFIX", "")
-    return os.path.join(os.path.expanduser("~"), f".wmux{suffix}.sock")
+    candidates = [
+        os.path.join(home, f".wmux{suffix}", "daemon.sock"),
+        os.path.join(home, f".wmux{suffix}.sock"),
+        os.path.join(home, f".wmux-daemon{suffix}.sock"),
+    ]
+    for path in candidates:
+        if os.path.exists(path):
+            return path
+    return candidates[0]
+
+
+def session_socket_path(session_id: str) -> str:
+    """Return the per-session input pipe path (getSessionSocketPath)."""
+    return os.path.join(_wmux_home(), f"session-{session_id}.sock")
+
+
+def _token_candidates() -> List[str]:
+    home = os.path.expanduser("~")
+    suffix = os.environ.get("WMUX_DATA_SUFFIX", "")
+    return [
+        os.path.join(home, f".wmux{suffix}", "daemon-auth-token"),
+        os.path.join(home, ".wmux-auth-token"),
+    ]
 
 
 def _read_token() -> Optional[str]:
     env = os.environ.get("WMUX_AUTH_TOKEN")
     if env:
         return env
-    try:
-        with open(os.path.join(os.path.expanduser("~"), ".wmux-auth-token"), "r", encoding="utf-8") as f:
-            token = f.read().strip()
-            return token or None
-    except OSError:
-        return None
+    for path in _token_candidates():
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                token = f.read().strip()
+                if token:
+                    return token
+        except OSError:
+            continue
+    return None
+
+
+class _PipeBusy(RuntimeError):
+    """Session pipe dropped us before the flush marker (occupied / rate-limited)."""
 
 
 class WmuxClient:
@@ -95,88 +126,91 @@ class WmuxClient:
         self.socket_path = socket_path or default_socket_path()
         self.timeout = timeout
         self.token = _read_token()
-        self.handshaken = False
-
-    # ------------------------------------------------------------------ #
-    # Public API
-    # ------------------------------------------------------------------ #
-    def ensure_handshake(self) -> None:
-        """``mcp.identify`` + ``mcp.declarePermissions`` (idempotent)."""
-        if self.handshaken:
-            return
-        self._request("mcp.identify", {"name": CLIENT_NAME, "version": _client_version()})
-        self._request("mcp.declarePermissions", {"permissions": list(PERMISSIONS)})
-        self.handshaken = True
 
     def call(self, method: str, params: Optional[Dict[str, Any]] = None) -> Any:
         """Invoke ``method`` and return its ``result``. Raises on failure."""
-        if not method.startswith("mcp."):
-            self.ensure_handshake()
-        return self._request(method, params or {})
+        frame = {
+            "id": str(uuid.uuid4()),
+            "method": method,
+            "params": params if params is not None else {},
+            "token": self.token,
+        }
+        reply = self._exchange(frame)
+        if reply.get("ok"):
+            return reply.get("result")
+        error = str(reply.get("error") or "")
+        if "unauthorized" in error.lower():
+            if self.token is None:
+                checked = ", ".join(["$WMUX_AUTH_TOKEN", *_token_candidates()])
+                raise RuntimeError(
+                    f"wmux: no auth token found (checked {checked}) — "
+                    "is the wmux daemon running?"
+                )
+            raise RuntimeError(
+                "wmux: unauthorized — the daemon rejected the auth token "
+                "(stale token file? restart wmux)"
+            )
+        raise RuntimeError(f"wmux: {method} failed: {error or reply}")
 
     # ------------------------------------------------------------------ #
     # Wire protocol
     # ------------------------------------------------------------------ #
-    def _build_frame(self, method: str, params: Dict[str, Any]) -> Dict[str, Any]:
-        return {
-            "id": str(uuid.uuid4()),
-            "method": method,
-            "params": params,
-            "token": self.token,
-            "clientName": CLIENT_NAME,
-            "clientVersion": _client_version(),
-        }
-
-    def _request(self, method: str, params: Dict[str, Any]) -> Any:
-        """Send one request, handling capability-approval retries."""
-        frame = self._build_frame(method, params)
-        last_error = ""
-        for _ in range(_APPROVAL_MAX_ATTEMPTS):
-            reply = self._exchange(frame)
-            if reply.get("ok"):
-                return reply.get("result")
-            error = str(reply.get("error") or "")
-            rejection = reply.get("rejection") or {}
-            status = str(rejection.get("status") or "")
-            if "awaiting" in error.lower() or "await" in status.lower():
-                # One-time human approval in the wmux window -> poll again.
-                last_error = error or status
-                time.sleep(_APPROVAL_POLL_SECONDS)
-                continue
-            raise RuntimeError(
-                f"wmux: {method} failed: {error or rejection or reply}"
-            )
-        raise RuntimeError(
-            f"wmux: {method} still awaiting user approval after "
-            f"{_APPROVAL_MAX_ATTEMPTS} attempts ({last_error}). "
-            "Approve the prompt in the wmux window and retry."
-        )
-
     def _exchange(self, frame: Dict[str, Any]) -> Dict[str, Any]:
-        """One socket round-trip. ALWAYS sets a timeout — no hangs."""
+        """One socket round-trip. ALWAYS sets a timeout — no hangs.
+
+        Connection drops are retried: the daemon rate-limits incoming
+        connections and may accept-then-drop them.
+        """
         payload = (json.dumps(frame) + "\n").encode("utf-8")
-        try:
-            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        data = b""
+        for attempt in range(_CONTROL_CONNECT_ATTEMPTS):
+            data = b""
             try:
-                sock.settimeout(self.timeout)
-                sock.connect(self.socket_path)
-                sock.sendall(payload)
-                data = b""
-                while not data.endswith(b"\n"):
-                    chunk = sock.recv(65536)
-                    if not chunk:
-                        break
-                    data += chunk
-            finally:
-                sock.close()
-        except (FileNotFoundError, ConnectionRefusedError) as exc:
-            raise RuntimeError(
-                f"wmux is not running: cannot connect to {self.socket_path} "
-                f"({exc}). Start wmux first (e.g. launch the wmux app / "
-                "`wmux daemon`) and retry."
-            ) from exc
-        except OSError as exc:
-            raise RuntimeError(f"wmux socket I/O error on {self.socket_path}: {exc}") from exc
+                sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                try:
+                    sock.settimeout(self.timeout)
+                    sock.connect(self.socket_path)
+                    sock.sendall(payload)
+                    while not data.endswith(b"\n"):
+                        chunk = sock.recv(65536)
+                        if not chunk:
+                            break
+                        data += chunk
+                finally:
+                    sock.close()
+            except (FileNotFoundError, ConnectionRefusedError) as exc:
+                raise RuntimeError(
+                    f"wmux is not running: cannot connect to {self.socket_path} "
+                    f"({exc}). Start wmux first (e.g. launch the wmux app / "
+                    "`wmux daemon`) and retry."
+                ) from exc
+            except socket.timeout as exc:
+                raise RuntimeError(
+                    f"wmux: no reply from the daemon at {self.socket_path} "
+                    f"after {self.timeout}s"
+                ) from exc
+            except (ConnectionResetError, BrokenPipeError) as exc:
+                if attempt == _CONTROL_CONNECT_ATTEMPTS - 1:
+                    raise RuntimeError(
+                        f"wmux: the daemon kept dropping the connection at "
+                        f"{self.socket_path} ({exc})"
+                    ) from exc
+                time.sleep(0.2)
+                continue
+            except OSError as exc:
+                raise RuntimeError(
+                    f"wmux socket I/O error on {self.socket_path}: {exc}"
+                ) from exc
+            if not data:
+                # Accepted, then closed without a reply (rate limit / restart).
+                if attempt == _CONTROL_CONNECT_ATTEMPTS - 1:
+                    raise RuntimeError(
+                        f"wmux: the daemon closed the connection without a "
+                        f"reply at {self.socket_path} (rate limited?)"
+                    )
+                time.sleep(0.2)
+                continue
+            break
 
         text = data.decode("utf-8", "replace").strip()
         if not text:
@@ -184,14 +218,16 @@ class WmuxClient:
         try:
             reply = json.loads(text)
         except json.JSONDecodeError as exc:
-            raise RuntimeError(f"wmux: non-JSON reply for {frame.get('method')}: {text[:200]}") from exc
+            raise RuntimeError(
+                f"wmux: non-JSON reply for {frame.get('method')}: {text[:200]}"
+            ) from exc
         if not isinstance(reply, dict):
             raise RuntimeError(f"wmux: unexpected reply shape: {reply!r}")
         return reply
 
 
 class WmuxMultiplexer(MultiplexerBase):
-    """Native wmux workstream management (JSON-RPC over Unix socket)."""
+    """Native wmux workstream management (session RPC + session pipes)."""
 
     name = "wmux"
 
@@ -199,7 +235,7 @@ class WmuxMultiplexer(MultiplexerBase):
         super().__init__(config)
         self.session = f"workstreams-{config.project}"
         self._client: Optional[WmuxClient] = None
-        self._pane_map: Dict[int, Dict[str, str]] = {}  # ws_id -> {paneId, ptyId}
+        self._pane_map: Dict[int, Dict[str, str]] = {}  # ws_id -> {sessionId}
 
     # ------------------------------------------------------------------ #
     # Client
@@ -210,6 +246,21 @@ class WmuxMultiplexer(MultiplexerBase):
             self._client = WmuxClient()
         return self._client
 
+    def _session_id(self, workstream_id: int) -> str:
+        """Stable, daemon-valid session id: ``ws-<project>-<n>`` (<= 64 chars)."""
+        project = re.sub(r"[^a-zA-Z0-9_-]", "-", str(self.config.project))
+        suffix = f"-{int(workstream_id)}"
+        budget = 64 - len("ws-") - len(suffix)
+        if budget < 0:
+            raise RuntimeError("wmux: project name too long for a session id")
+        sid = f"ws-{project[:budget]}{suffix}"
+        if not SESSION_ID_RE.match(sid):
+            raise RuntimeError(
+                f"wmux: cannot derive a valid session id from project "
+                f"{self.config.project!r} (got {sid!r})"
+            )
+        return sid
+
     # ------------------------------------------------------------------ #
     # Base interface
     # ------------------------------------------------------------------ #
@@ -217,10 +268,10 @@ class WmuxMultiplexer(MultiplexerBase):
         return self.session
 
     def pane_target(self, workstream_id: int) -> str:
-        """wmux targets panes by id; return the recorded paneId (or "")."""
+        """wmux targets sessions by id; return the recorded sessionId (or "")."""
         self._restore_pane_map()
         entry = self._pane_map.get(workstream_id)
-        return str(entry["paneId"]) if entry else ""
+        return str(entry["sessionId"]) if entry and entry.get("sessionId") else ""
 
     def binary_name(self) -> str:
         return "wmux"
@@ -228,122 +279,242 @@ class WmuxMultiplexer(MultiplexerBase):
     def is_available(self) -> bool:
         return shutil.which("wmux") is not None
 
-    def start(self, workstreams: List[Dict[str, Any]], command: Optional[str] = None) -> None:
+    def start(
+        self, workstreams: List[Dict[str, Any]], command: Optional[str] = None
+    ) -> None:
         client = self._cli
-        client.ensure_handshake()  # fails fast when the socket is absent
-
-        listed = client.call("pane.list") or {}
-        panes = listed.get("panes") if isinstance(listed, dict) else None
-        panes = panes if isinstance(panes, list) else []
-        by_label = {
-            str((p.get("metadata") or {}).get("label", "")): p
-            for p in panes
-            if isinstance(p, dict)
+        listed = client.call("daemon.listSessions") or []
+        existing = {
+            str(s.get("id")) for s in listed if isinstance(s, dict) and s.get("id")
         }
-
-        # Pass 1: reuse labeled panes, split+label the rest. Track ids locally
-        # so we don't depend on pane.list reflecting setMetadata immediately.
-        pane_id_by_ws: Dict[int, Any] = {}
-        for i, ws in enumerate(workstreams):
-            ws_id = int(ws.get("id", i + 1))
-            label = str(ws.get("name") or f"ws{ws_id}")[:_LABEL_MAX]
-            pane = by_label.get(label)
-            if pane is not None:
-                pane_id_by_ws[ws_id] = pane
-                continue
-            reply = client.call("pane.split", {"direction": "horizontal"}) or {}
-            pane_id = reply.get("paneId") if isinstance(reply, dict) else None
-            if pane_id is None:
-                raise RuntimeError(f"wmux: pane.split returned no paneId: {reply!r}")
-            client.call("pane.setMetadata", {"paneId": pane_id, "label": label})
-            pane_id_by_ws[ws_id] = pane_id
-
-        # Pass 2: re-list so freshly split panes carry their ptyIds.
-        listed = client.call("pane.list") or {}
-        panes = listed.get("panes") if isinstance(listed, dict) else []
-        pty_by_pane = {}
-        for p in panes or []:
-            if not isinstance(p, dict):
-                continue
-            ptys = p.get("surfacePtyIds") or []
-            if ptys:
-                pty_by_pane[p.get("id")] = ptys[0]
+        base_dir = self.config.base_path
 
         for i, ws in enumerate(workstreams):
             ws_id = int(ws.get("id", i + 1))
-            pane = pane_id_by_ws[ws_id]
-            pane_id = pane.get("id") if isinstance(pane, dict) else pane
-            pty_id = pty_by_pane.get(pane_id)
-            if not pty_id:
-                label = str(ws.get("name") or f"ws{ws_id}")[:_LABEL_MAX]
-                raise RuntimeError(
-                    f"wmux: pane {pane_id!r} ({label}) has no surfacePtyIds"
-                )
-            self._pane_map[ws_id] = {"paneId": pane_id, "ptyId": pty_id}
+            sid = self._session_id(ws_id)
 
-            ws_cmd = command or ws.get("command") or ""
-            if ws_cmd:
-                client.call(
-                    "input.send",
-                    {"ptyId": pty_id, "text": ws_cmd, "submit": True},
-                )
+            if sid not in existing:
+                params: Dict[str, Any] = {
+                    "id": sid,
+                    "cwd": base_dir,
+                    "cols": 80,
+                    "rows": 24,
+                }
+                shell = os.environ.get("SHELL")
+                if shell:
+                    params["cmd"] = shell
+                try:
+                    client.call("daemon.createSession", params)
+                except RuntimeError as exc:
+                    # A concurrent start may have won the race; reuse in that case.
+                    if "already exists" not in str(exc):
+                        raise
+            self._pane_map[ws_id] = {"sessionId": sid}
+
+            line = self._compose_line(ws, base_dir, command)
+            if line:
+                self._send_to_session(sid, line)
 
         self._persist_pane_map()
-        print(f"Started {len(workstreams)} workstream(s) in wmux (session '{self.session}')")
-        print("  Observe: wmux GUI — panes are labeled per workstream.")
+        print(
+            f"Started {len(workstreams)} workstream(s) in wmux session '{self.session}'"
+        )
+        print("  Observe: wmux GUI — sessions are named ws-<project>-<n>.")
 
     def attach(self, session: Optional[str] = None) -> None:
         # wmux is a GUI: there is no blocking CLI attach to run here.
         target = session or self.session
-        print(f"wmux session '{target}': open the wmux window; panes are labeled per workstream.")
+        print(f"wmux session '{target}': open the wmux window to observe it.")
 
     def send_command(self, workstream_id: int, command: str) -> bool:
         self._restore_pane_map()
         entry = self._pane_map.get(workstream_id)
-        if entry is None:
+        if entry is None or not entry.get("sessionId"):
             print(
-                f"[workstreams] wmux: no pane recorded for workstream "
+                f"[workstreams] wmux: no session recorded for workstream "
                 f"{workstream_id}; run `workstreams start` first.",
                 file=sys.stderr,
             )
             return False
-        reply = self._cli.call(
-            "input.send",
-            {"ptyId": entry["ptyId"], "text": command, "submit": True},
-        )
-        if isinstance(reply, dict):
-            return bool(reply.get("ok"))
-        return False
+        try:
+            self._send_to_session(entry["sessionId"], command)
+            return True
+        except RuntimeError as exc:
+            print(f"[workstreams] wmux: {exc}", file=sys.stderr)
+            return False
 
     def capture(self, workstream_id: int, lines: int = 20) -> List[str]:
         self._restore_pane_map()
         entry = self._pane_map.get(workstream_id)
-        if entry is None:
+        if entry is None or not entry.get("sessionId"):
             return []
-        reply = self._cli.call("input.readScreen", {"ptyId": entry["ptyId"]})
-        text = reply.get("text", "") if isinstance(reply, dict) else str(reply or "")
-        return [ln.rstrip() for ln in text.splitlines()][-lines:]
+        reply = self._cli.call("daemon.readSessionText", {"id": entry["sessionId"]})
+        if not isinstance(reply, dict) or reply.get("mode") != "rows":
+            return []
+        rows = reply.get("rows") or []
+        texts = [str(r.get("text", "")).rstrip() for r in rows if isinstance(r, dict)]
+        return [t for t in texts if t][-lines:]
 
     def list_windows(self) -> List[Dict[str, Any]]:
-        reply = self._cli.call("pane.list") or {}
-        panes = reply.get("panes") if isinstance(reply, dict) else []
-        out: List[Dict[str, Any]] = []
-        for p in panes or []:
-            if isinstance(p, dict):
-                out.append({"id": p.get("id"),
-                            "label": (p.get("metadata") or {}).get("label", "")})
-        return out
+        self._restore_pane_map()
+        if not self._pane_map:
+            return []
+        mapped = {
+            str(e["sessionId"]) for e in self._pane_map.values() if e.get("sessionId")
+        }
+        listed = self._cli.call("daemon.listSessions") or []
+        return [
+            {"id": str(s.get("id")), "label": str(s.get("id"))}
+            for s in listed
+            if isinstance(s, dict) and str(s.get("id")) in mapped
+        ]
 
     def kill(self) -> None:
         self._restore_pane_map()
-        for entry in self._pane_map.values():
+        for entry in list(self._pane_map.values()):
+            sid = entry.get("sessionId")
+            if not sid:
+                continue
             try:
-                self._cli.call("pane.close", {"id": entry["paneId"]})
+                self._cli.call("daemon.destroySession", {"id": sid})
             except RuntimeError:
                 pass  # best-effort teardown
 
     # ------------------------------------------------------------------ #
-    # Pane map persistence (same pattern as lmux)
+    # Session pipe (input path)
+    # ------------------------------------------------------------------ #
+    def _send_to_session(self, session_id: str, text: str) -> None:
+        """Type ``text`` (plus Enter) into the session's pty via its pipe."""
+        sock = self._pipe_connect(session_id)
+        try:
+            payload = text if text.endswith("\n") else text + "\n"
+            sock.sendall(payload.encode("utf-8"))
+            # Brief drain: swallow the pty echo / reflush tail, then go.
+            sock.settimeout(0.3)
+            try:
+                while sock.recv(65536):
+                    pass
+            except (socket.timeout, OSError):
+                pass
+        finally:
+            sock.close()
+
+    def _pipe_connect(self, session_id: str) -> socket.socket:
+        """Connect + authenticate against ``session-<id>.sock``.
+
+        Creates the pipe (``daemon.attachSession``) when missing and retries
+        transient drops (per-pipe rate limit, stale socket file).
+        """
+        path = session_socket_path(session_id)
+        token = (self._cli.token or "").encode("utf-8")
+        last_error: Optional[BaseException] = None
+        for attempt in range(_PIPE_CONNECT_ATTEMPTS):
+            if not os.path.exists(path):
+                self._cli.call("daemon.attachSession", {"id": session_id})
+                deadline = time.monotonic() + _ATTACH_POLL_SECONDS
+                while not os.path.exists(path) and time.monotonic() < deadline:
+                    time.sleep(0.05)
+                if not os.path.exists(path):
+                    raise RuntimeError(
+                        f"wmux: session '{session_id}' has no live pipe "
+                        "(destroyed or never created?) — run `workstreams start`."
+                    )
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            try:
+                sock.settimeout(_FLUSH_TIMEOUT)
+                sock.connect(path)
+                sock.sendall(token + b"\n")
+                self._read_auth_flush(sock, session_id, token)
+                return sock
+            except _PipeBusy as exc:
+                sock.close()
+                last_error = exc
+                if attempt < _PIPE_CONNECT_ATTEMPTS - 1:
+                    time.sleep(_PIPE_RETRY_SLEEP)
+                    continue
+                break
+            except (FileNotFoundError, ConnectionRefusedError) as exc:
+                # Stale socket file: SessionPipe.start() unlinks it itself on
+                # re-attach, so drop it and force a fresh attachSession.
+                sock.close()
+                last_error = exc
+                try:
+                    if os.path.exists(path):
+                        os.unlink(path)
+                except OSError:
+                    pass
+                continue
+            except RuntimeError:
+                sock.close()
+                raise
+            except OSError as exc:
+                sock.close()
+                raise RuntimeError(
+                    f"wmux: session pipe I/O error on {path}: {exc}"
+                ) from exc
+        raise RuntimeError(
+            f"wmux: cannot use the pipe for session '{session_id}': {last_error} "
+            "— the pane may be open in the wmux GUI (the pipe takes one client); "
+            "close/detach it and retry."
+        )
+
+    def _read_auth_flush(
+        self, sock: socket.socket, session_id: str, token: bytes
+    ) -> None:
+        """Validate auth and consume output until the flush marker.
+
+        Returns once the marker is seen or the server goes quiet — input
+        writes are safe either way (bytes go straight to the pty). Raises
+        ``_PipeBusy`` when the server drops us before authenticating.
+        """
+        marker = b"\0WMUX_FLUSH_DONE:" + token + b"\0"
+        tail = b""
+        deadline = time.monotonic() + _FLUSH_TIMEOUT
+        while time.monotonic() < deadline:
+            try:
+                chunk = sock.recv(65536)
+            except socket.timeout:
+                return  # quiet server; input path is independent of the flush
+            if not chunk:
+                if b"AUTH_FAILED" in tail:
+                    raise RuntimeError(
+                        "wmux: session pipe rejected the auth token "
+                        "(stale token file? restart wmux)"
+                    )
+                raise _PipeBusy(
+                    f"the pipe for session '{session_id}' dropped the "
+                    "connection before the flush marker"
+                )
+            tail = (tail + chunk)[-4096:]
+            if b"AUTH_FAILED" in tail:
+                raise RuntimeError(
+                    "wmux: session pipe rejected the auth token "
+                    "(stale token file? restart wmux)"
+                )
+            if marker in tail:
+                return
+
+    # ------------------------------------------------------------------ #
+    # Command composition (mirrors the tmux multiplexer's send-keys form)
+    # ------------------------------------------------------------------ #
+    @staticmethod
+    def _compose_line(ws: Dict[str, Any], base_dir: str, command: Optional[str]) -> str:
+        segments: List[str] = []
+        ws_path = ws.get("path") or ""
+        if ws_path:
+            segments.append(f"cd {shlex.quote(os.path.join(base_dir, ws_path))}")
+        env = ws.get("env") or {}
+        body_parts = [f"{k}={shlex.quote(str(v))}" for k, v in sorted(env.items())]
+        ws_cmd = command or ws.get("command") or ""
+        if ws_cmd:
+            body_parts.append(ws_cmd)
+        body = " ".join(body_parts)
+        if segments and body:
+            return f"{segments[0]} && {body}"
+        return segments[0] if segments else body
+
+    # ------------------------------------------------------------------ #
+    # Session map persistence (same pattern as lmux)
     # ------------------------------------------------------------------ #
     def _map_path(self) -> str:
         data_dir = os.environ.get("WORKSTREAMS_DATA_DIR", ".workstreams")
@@ -363,8 +534,6 @@ class WmuxMultiplexer(MultiplexerBase):
         try:
             with open(self._map_path(), "r", encoding="utf-8") as f:
                 data = json.load(f)
-            self._pane_map = {
-                int(k): dict(v) for k, v in data.get("panes", {}).items()
-            }
+            self._pane_map = {int(k): dict(v) for k, v in data.get("panes", {}).items()}
         except (OSError, ValueError, json.JSONDecodeError, TypeError):
             self._pane_map = {}
