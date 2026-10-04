@@ -335,7 +335,9 @@ def _cmd_workstream(args) -> int:
 def _cmd_dispatch(args) -> int:
     manager = _load_manager(args)
     # Build the pane command
-    prompt = args.prompt or f"Work on issue #{args.issue} as {args.subagent}" if args.issue else f"as {args.subagent}"
+    prompt = args.prompt or (
+        f"Work on issue #{args.issue} as {args.subagent}" if args.issue else f"as {args.subagent}"
+    )
     if args.agent:
         pane_cmd = f"{args.agent} {prompt}"
         if args.issue:
