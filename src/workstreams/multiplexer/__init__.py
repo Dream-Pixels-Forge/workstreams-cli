@@ -10,23 +10,27 @@ from .tmux import TmuxMultiplexer
 from .zellij import ZellijMultiplexer
 from .tmux_compatible import TmuxCompatibleMultiplexer
 from .lmux import LmuxMultiplexer
+from .wmux import WmuxMultiplexer
 
 __all__ = [
     "MultiplexerBase",
     "TmuxMultiplexer",
     "ZellijMultiplexer",
     "LmuxMultiplexer",
+    "WmuxMultiplexer",
     "get_multiplexer",
     "resolve_default_multiplexer",
 ]
 
 # Name -> binary that must be on PATH. The TmuxCompatibleMultiplexer wraps
 # any binary whose CLI is compatible with tmux (send-keys, new-window, ...).
-# NOTE: "lmux" is NOT tmux-compatible; it has a native dialect
-# (LmuxMultiplexer JSON verbs) and is handled by its own class.
+# NOTE: "lmux" and "wmux" are NOT tmux-compatible; they have native dialects
+# (LmuxMultiplexer JSON verbs / WmuxMultiplexer JSON-RPC) and are handled by
+# their own classes. The tmux-compat shim HANGS FOREVER on wmux (every wmux
+# invocation launches the Electron GUI and blocks), so wmux must never be
+# routed through it.
 _TMUX_COMPATIBLE = {
     "nami": "nami",
-    "wmux": "wmux",
     "herdr": "herdr",
 }
 
@@ -43,17 +47,25 @@ _PLATFORM_PREFERENCE = {
 def _installed(name: str) -> bool:
     """Return True if the CLI binary for `name` is on PATH.
 
-    For the tmux-compatible wrappers (wmux, nami, herdr) we additionally
+    For the tmux-compatible wrappers (nami, wmux, herdr) we additionally
     require that the binary actually exposes a tmux-style command.
 
-    `lmux` is special-cased: it speaks its OWN native dialect
-    and is driven by its dedicated class (LmuxMultiplexer)
-    — never the tmux wrapper.
+    `lmux` and `wmux` are special-cased: each speaks its OWN native dialect
+    and is driven by its dedicated class (LmuxMultiplexer / WmuxMultiplexer)
+    — never the tmux wrapper. wmux additionally requires a live RPC socket
+    for auto-detect, because probing it with a subprocess would launch the
+    Electron GUI and block.
     """
     if name == "lmux":
         if shutil.which("lmux") is None:
             return False
         return _supports_lmux_dialect("lmux")
+    if name == "wmux":
+        if shutil.which("wmux") is None:
+            return False
+        from .wmux import default_socket_path
+        import os
+        return os.path.exists(default_socket_path())
     if name in ("tmux", "zellij"):
         binary = name
     elif name in _TMUX_COMPATIBLE:
@@ -195,6 +207,7 @@ def get_multiplexer(name: str, config) -> MultiplexerBase:
         "tmux": TmuxMultiplexer,
         "zellij": ZellijMultiplexer,
         "lmux": LmuxMultiplexer,
+        "wmux": WmuxMultiplexer,
     }
     cls = multiplexers.get(name)
     if not cls:
