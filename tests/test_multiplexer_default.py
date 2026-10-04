@@ -94,15 +94,27 @@ def test_platform_preference_lists_are_sane():
             assert m in {"tmux", "zellij", "lmux", "wmux", "nami", "herdr"}
 
 def test_lmux_not_tmux_compatible(monkeypatch):
-    """Regression: lmux's CLI is workspace/surface-based, not tmux-
-    compatible. Even when installed, _installed('lmux') must return
-    False so auto-detect skips it and falls to zellij/tmux."""
+    """lmux is NOT in the tmux-compatible wrapper family; it has its own
+    native dialect. The wrapper path must never be used for it."""
     import workstreams.multiplexer as m
-    m._tmux_dialect_cache.clear()
+    m._lmux_dialect_cache.clear()
     import shutil
     monkeypatch.setattr(shutil, "which", lambda name: "/usr/bin/lmux" if name == "lmux" else None)
-    monkeypatch.setattr("workstreams.multiplexer._supports_tmux_dialect", lambda b: False)
+    # lmux is not in _TMUX_COMPATIBLE — the native-dialect detector handles it.
+    assert "lmux" not in m._TMUX_COMPATIBLE
+    # Native dialect OFF -> not usable natively.
+    monkeypatch.setattr("workstreams.multiplexer._supports_lmux_dialect", lambda b: False)
     assert m._installed("lmux") is False
+
+
+def test_lmux_native_dialect_recognised(monkeypatch):
+    """A binary exposing the native lmux verbs IS detected as usable."""
+    import workstreams.multiplexer as m
+    m._lmux_dialect_cache.clear()
+    import shutil
+    monkeypatch.setattr(shutil, "which", lambda name: "/usr/bin/lmux" if name == "lmux" else None)
+    monkeypatch.setattr("workstreams.multiplexer._supports_lmux_dialect", lambda b: True)
+    assert m._installed("lmux") is True
 
 
 def test_zellij_dialect_recognised(monkeypatch):
@@ -118,13 +130,31 @@ def test_zellij_dialect_recognised(monkeypatch):
     assert m._installed("zellij") is True
 
 
-def test_auto_detect_falls_past_incompatible_lmux(monkeypatch):
-    """On Linux, if only 'lmux' and 'zellij' are installed and lmux is
-    not tmux-compatible, auto-detect must return zellij."""
+def test_auto_detect_picks_lmux_when_natively_supported(monkeypatch):
+    """On Linux, lmux is top-preference. If its native dialect is present,
+    auto-detect returns 'lmux' even if zellij is also installed."""
     import workstreams.multiplexer as m
     import shutil
-    m._tmux_dialect_cache.clear()
-    monkeypatch.setattr(shutil, "which", lambda name: "/usr/bin/lmux" if name in ("lmux","zellij") else None)
-    monkeypatch.setattr("workstreams.multiplexer._supports_tmux_dialect", lambda b: b == "zellij")
+    m._lmux_dialect_cache.clear()
+    monkeypatch.setattr(
+        shutil, "which",
+        lambda name: "/usr/bin/lmux" if name in ("lmux", "zellij") else None,
+    )
+    monkeypatch.setattr("workstreams.multiplexer._supports_lmux_dialect", lambda b: True)
+    got = m.resolve_default_multiplexer(interactive=False)
+    assert got == "lmux"
+
+
+def test_auto_detect_falls_to_zellij_when_lmux_not_usable(monkeypatch):
+    """On Linux, if lmux is present but NOT natively supported, auto-detect
+    must fall through to zellij (the next preference)."""
+    import workstreams.multiplexer as m
+    import shutil
+    m._lmux_dialect_cache.clear()
+    monkeypatch.setattr(
+        shutil, "which",
+        lambda name: "/usr/bin/lmux" if name in ("lmux", "zellij") else None,
+    )
+    monkeypatch.setattr("workstreams.multiplexer._supports_lmux_dialect", lambda b: False)
     got = m.resolve_default_multiplexer(interactive=False)
     assert got == "zellij"

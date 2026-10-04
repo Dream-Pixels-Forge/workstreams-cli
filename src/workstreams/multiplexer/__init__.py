@@ -1,6 +1,7 @@
 """Terminal multiplexer implementations + platform-aware default detection."""
 
 import shutil
+import subprocess
 import sys
 from typing import Dict
 
@@ -8,25 +9,30 @@ from .base import MultiplexerBase
 from .tmux import TmuxMultiplexer
 from .zellij import ZellijMultiplexer
 from .tmux_compatible import TmuxCompatibleMultiplexer
+from .lmux import LmuxMultiplexer
 
 __all__ = [
     "MultiplexerBase",
     "TmuxMultiplexer",
     "ZellijMultiplexer",
+    "LmuxMultiplexer",
     "get_multiplexer",
     "resolve_default_multiplexer",
 ]
 
 # Name -> binary that must be on PATH. The TmuxCompatibleMultiplexer wraps
 # any binary whose CLI is compatible with tmux (send-keys, new-window, ...).
+# NOTE: "lmux" is NOT tmux-compatible; it has a native dialect
+# (LmuxMultiplexer JSON verbs) and is handled by its own class.
 _TMUX_COMPATIBLE = {
     "nami": "nami",
-    "lmux": "lmux",
     "wmux": "wmux",
     "herdr": "herdr",
 }
 
 # Ordered preference list per platform. We pick the FIRST that is installed.
+# lmux is the top Linux choice because it is purpose-built for AI coding
+# agents and workstreams now drives it natively.
 _PLATFORM_PREFERENCE = {
     "win": ["wmux", "lmux", "zellij", "tmux"],
     "mac": ["tmux", "zellij", "nami", "lmux", "wmux"],
@@ -37,12 +43,17 @@ _PLATFORM_PREFERENCE = {
 def _installed(name: str) -> bool:
     """Return True if the CLI binary for `name` is on PATH.
 
-    For tmux-compatible wrappers (lmux, wmux, nami, herdr) we additionally
-    require that the binary actually exposes a tmux-style command, because
-    'installed' alone is not sufficient — e.g. `lmux` has a completely
-    different CLI (`workspace.create`, `surface.send-key`) and is not
-    tmux-compatible despite the name.
+    For the tmux-compatible wrappers (wmux, nami, herdr) we additionally
+    require that the binary actually exposes a tmux-style command.
+
+    `lmux` is special-cased: it speaks its OWN native dialect
+    and is driven by its dedicated class (LmuxMultiplexer)
+    — never the tmux wrapper.
     """
+    if name == "lmux":
+        if shutil.which("lmux") is None:
+            return False
+        return _supports_lmux_dialect("lmux")
     if name in ("tmux", "zellij"):
         binary = name
     elif name in _TMUX_COMPATIBLE:
@@ -57,6 +68,30 @@ def _installed(name: str) -> bool:
 
 
 _tmux_dialect_cache: Dict[str, bool] = {}
+_lmux_dialect_cache: Dict[str, bool] = {}
+
+
+def _supports_lmux_dialect(binary: str) -> bool:
+    """Heuristic: does `binary` expose lmux's native verb-dialect?
+
+    Probes ``<binary> help`` for the canonical native verbs:
+    ``workspace.create`` AND ``surface.send_text``. A binary that has these
+    is driven natively by :class:`LmuxMultiplexer` (JSON socket protocol).
+    """
+    key = binary
+    if key in _lmux_dialect_cache:
+        return _lmux_dialect_cache[key]
+    result = False
+    try:
+        proc = subprocess.run([binary, "help"], capture_output=True, text=True, timeout=5)
+        help_text = (proc.stdout or "") + (proc.stderr or "")
+        has_workspace = "workspace.create" in help_text
+        has_send_text = "surface.send_text" in help_text or "surface.send-text" in help_text
+        result = has_workspace and has_send_text
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        result = False
+    _lmux_dialect_cache[key] = result
+    return result
 
 
 def _supports_tmux_dialect(binary: str) -> bool:
@@ -159,15 +194,17 @@ def get_multiplexer(name: str, config) -> MultiplexerBase:
     multiplexers = {
         "tmux": TmuxMultiplexer,
         "zellij": ZellijMultiplexer,
+        "lmux": LmuxMultiplexer,
     }
-    if name in _TMUX_COMPATIBLE:
-        binary = _TMUX_COMPATIBLE[name]
-        return TmuxCompatibleMultiplexer(config, binary)
     cls = multiplexers.get(name)
     if not cls:
+        # Fallback: a tmux-compatible wrapper binary (nami/herdr).
+        if name in _TMUX_COMPATIBLE:
+            binary = _TMUX_COMPATIBLE[name]
+            return TmuxCompatibleMultiplexer(config, binary)
         raise ValueError(
             f"Unknown multiplexer: {name}. "
-            f"Supported: {', '.join(multiplexers)} plus tmux-compatible: {', '.join(_TMUX_COMPATIBLE)} "
-            f"or 'default' (auto-detect)."
+            f"Supported: {', '.join(multiplexers)} plus tmux-compatible: "
+            f"{', '.join(_TMUX_COMPATIBLE)} or 'default' (auto-detect)."
         )
     return cls(config)
