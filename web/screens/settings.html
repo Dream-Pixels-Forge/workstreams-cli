@@ -1,51 +1,65 @@
 <div id="settings-screen" class="screen-view hidden">
-          <div class="space-y-4">
-            <p class="text-xs text-on-surface/60">Live view of <code>.workstreams.yaml</code> served by <code>/api/config</code>.</p>
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 class="label-md text-on-surface">System &amp; Agent Engine Configuration</h2>
+            <p class="text-xs text-on-surface-variant">Live view of <span class="code-stream">.workstreams.yaml</span> served by <span class="code-stream">/api/config</span></p>
+          </div>
 
-            <!-- Core configuration -->
-            <div class="grid grid-cols-2 gap-3 mb-4 md:grid-cols-4">
-              <div class="rounded border border-border p-3">
-                <h4 class="text-xs font-medium text-primary mb-2">Project</h4>
-                <p class="text-on-surface/60 text-xs font-mono" id="cfg-project">—</p>
+          <!-- 1) LLM Model Routing -->
+          <section class="panel mb-4">
+            <div class="panel-head">1) LLM Model Routing</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4">
+              <div class="border border-border bg-surface p-3">
+                <div class="label-md text-on-surface-variant mb-1">Default Agent</div>
+                <p class="code-stream text-primary" id="cfg-agent">—</p>
               </div>
-              <div class="rounded border border-border p-3">
-                <h4 class="text-xs font-medium text-primary mb-2">Multiplexer</h4>
-                <p class="text-on-surface/60 text-xs font-mono" id="cfg-multiplexer">—</p>
-              </div>
-              <div class="rounded border border-border p-3">
-                <h4 class="text-xs font-medium text-primary mb-2">Layout</h4>
-                <p class="text-on-surface/60 text-xs font-mono" id="cfg-layout">—</p>
-              </div>
-              <div class="rounded border border-border p-3">
-                <h4 class="text-xs font-medium text-primary mb-2">Base branch</h4>
-                <p class="text-on-surface/60 text-xs font-mono" id="cfg-base-branch">—</p>
-              </div>
-              <div class="rounded border border-border p-3">
-                <h4 class="text-xs font-medium text-primary mb-2">Dispatch mode</h4>
-                <p class="text-on-surface/60 text-xs font-mono" id="cfg-mode">—</p>
-              </div>
-              <div class="rounded border border-border p-3">
-                <h4 class="text-xs font-medium text-primary mb-2">Default agent</h4>
-                <p class="text-on-surface/60 text-xs font-mono" id="cfg-agent">—</p>
-              </div>
-              <div class="rounded border border-border p-3">
-                <h4 class="text-xs font-medium text-primary mb-2">Shared deps</h4>
-                <p class="text-on-surface/60 text-xs font-mono" id="cfg-shared-deps">—</p>
-              </div>
-              <div class="rounded border border-border p-3">
-                <h4 class="text-xs font-medium text-primary mb-2">Base path</h4>
-                <p class="text-on-surface/60 text-xs font-mono" id="cfg-base-path">—</p>
+              <div class="border border-border bg-surface p-3">
+                <div class="label-md text-on-surface-variant mb-1">Dispatch Mode</div>
+                <p class="code-stream text-primary" id="cfg-mode">—</p>
               </div>
             </div>
+          </section>
 
-            <!-- Configured workstreams -->
-            <div class="rounded border border-border p-4">
-              <h3 class="text-sm font-medium text-primary mb-3">
-                Workstreams <span class="text-on-surface/50" id="cfg-workstream-count">—</span>
-              </h3>
-              <ul id="cfg-workstreams" class="text-xs">
-                <li class="text-on-surface/60 text-sm">Loading…</li>
+          <!-- 2) Git Worktree & Filesystem Sandbox Patches -->
+          <section class="panel mb-4">
+            <div class="panel-head">2) Git Worktree &amp; Filesystem Sandbox Patches</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4">
+              <div class="border border-border bg-surface p-3">
+                <div class="label-md text-on-surface-variant mb-1">Base Branch</div>
+                <p class="code-stream text-primary" id="cfg-base-branch">—</p>
+              </div>
+              <div class="border border-border bg-surface p-3">
+                <div class="label-md text-on-surface-variant mb-1">Base Path</div>
+                <p class="code-stream text-primary" id="cfg-base-path">—</p>
+              </div>
+              <div class="border border-border bg-surface p-3">
+                <div class="label-md text-on-surface-variant mb-1">Shared Deps</div>
+                <p class="code-stream text-primary" id="cfg-shared-deps">—</p>
+              </div>
+            </div>
+            <div class="px-4 pb-4">
+              <h4 class="label-md text-on-surface-variant mb-2">Configured Workstreams <span class="text-primary" id="cfg-workstream-count">—</span></h4>
+              <ul id="cfg-workstreams" class="text-xs border-t border-border">
+                <li class="text-on-surface-variant py-2">Loading…</li>
               </ul>
             </div>
-          </div>
+          </section>
+
+          <!-- 3) Daemon & IPC Comets -->
+          <section class="panel">
+            <div class="panel-head">3) Daemon &amp; IPC Comets</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-4">
+              <div class="border border-border bg-surface p-3">
+                <div class="label-md text-on-surface-variant mb-1">Multiplexer</div>
+                <p class="code-stream text-primary" id="cfg-multiplexer">—</p>
+              </div>
+              <div class="border border-border bg-surface p-3">
+                <div class="label-md text-on-surface-variant mb-1">Layout</div>
+                <p class="code-stream text-primary" id="cfg-layout">—</p>
+              </div>
+              <div class="border border-border bg-surface p-3">
+                <div class="label-md text-on-surface-variant mb-1">Project</div>
+                <p class="code-stream text-primary" id="cfg-project">—</p>
+              </div>
+            </div>
+          </section>
         </div>

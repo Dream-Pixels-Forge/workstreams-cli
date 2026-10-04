@@ -1,29 +1,76 @@
 <div id="events-screen" class="screen-view hidden">
-          <div class="space-y-4">
-            <!-- Header Telemetry Bar (real values from /api/status) -->
-            <div class="grid grid-cols-3 gap-4 mb-4 text-on-surface/60 text-xs">
-              <div>
-                <div class="font-mono text-primary" id="ev-total">—</div>
-                <div class="mt-1">Events (last 10 min)</div>
+          <!-- Title + mode switcher -->
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div class="flex items-center gap-3">
+              <h2 class="label-md text-on-surface">Events &amp; Topology Panel</h2>
+              <span class="label-md px-2 py-0.5 bg-primary-fixed text-on-primary-container" id="ev-badge">—</span>
+            </div>
+            <div class="flex items-center gap-1 bg-surface-lowest p-1 border border-border-strong" role="tablist" aria-label="Topology display mode">
+              <button type="button" class="tab-btn" role="tab" aria-selected="false" disabled title="Circle mode — out of scope, separate goal">Circle</button>
+              <button type="button" class="tab-btn active" role="tab" aria-selected="true" aria-current="true">—o Lines</button>
+              <button type="button" class="tab-btn" role="tab" aria-selected="false" disabled title="3D View mode — out of scope, separate goal">3D View</button>
+            </div>
+          </div>
+
+          <!-- Header Telemetry Bar (real values from /api/status) -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+            <div class="metric-ribbon">
+              <div class="metric-value text-2xl text-primary" id="ev-total">—</div>
+              <div class="metric-label text-caption mt-1">EVENTS (LAST 10 MIN)</div>
+            </div>
+            <div class="metric-ribbon">
+              <div class="metric-value text-2xl text-secondary" id="ev-channels">—</div>
+              <div class="metric-label text-caption mt-1">ACTIVE SUBAGENTS</div>
+            </div>
+            <div class="metric-ribbon">
+              <div class="metric-value text-2xl text-danger" id="ev-fails">—</div>
+              <div class="metric-label text-caption mt-1">FAILURES</div>
+            </div>
+            <div class="metric-ribbon">
+              <div class="metric-value text-2xl text-on-surface" id="ev-last">—</div>
+              <div class="metric-label text-caption mt-1">LAST EVENT</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
+            <!-- Topology canvas (Lines mode) -->
+            <div class="panel lg:col-span-2">
+              <div class="panel-head flex items-center justify-between">
+                <span>Bus Topology — Lines Mode</span>
+                <span class="font-normal normal-case tracking-normal text-caption">real workstreams · orthogonal routing</span>
               </div>
-              <div>
-                <div class="font-mono text-cyan-500" id="ev-channels">—</div>
-                <div class="mt-1">Active subagents</div>
-              </div>
-              <div>
-                <div class="font-mono text-rose-500" id="ev-fails">—</div>
-                <div class="mt-1">Failures</div>
+              <div id="events-topology" class="p-3">
+                <p class="text-on-surface-variant text-xs">Loading…</p>
               </div>
             </div>
 
-            <!-- Event stream -->
-            <div class="rounded border border-border p-4">
-              <h3 class="text-sm font-medium text-primary mb-3">Subagent Event Stream</h3>
-              <div id="events-list" class="text-xs">
-                <p class="text-on-surface/60">Loading…</p>
+            <div class="space-y-4">
+              <!-- Signal control -->
+              <div class="panel">
+                <div class="panel-head">Signal Control</div>
+                <div id="signal-control" class="p-3 text-xs space-y-2">
+                  <p class="text-on-surface-variant">Loading…</p>
+                </div>
+              </div>
+
+              <!-- Commit trace -->
+              <div class="panel">
+                <div class="panel-head">Commit Trace</div>
+                <div id="commit-trace" class="p-3 text-xs space-y-2">
+                  <p class="text-on-surface-variant">Loading…</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Workstreams Screen (hidden by default) -->
+          <!-- Streaming telemetry log rows -->
+          <div class="panel">
+            <div class="panel-head flex items-center justify-between">
+              <span>Telemetry Log Tail</span>
+              <span class="font-normal normal-case tracking-normal text-caption">streaming · newest first</span>
+            </div>
+            <div id="events-list" class="text-xs max-h-80 overflow-y-auto">
+              <p class="text-on-surface-variant p-3">Loading…</p>
+            </div>
+          </div>
+        </div>

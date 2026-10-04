@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "outline-variant": "#424935", "secondary-container": "#00cbe6", "on-tertiary-container": "#0060ce", "surface-container-highest": "#323539", "tertiary": "#ffffff", "primary-fixed": "#b1f73f", "inverse-primary": "#446900", "on-surface": "#e1e2e8", "surface-variant": "#323539", "on-primary-fixed": "#121f00", "secondary-fixed-dim": "#2fd9f4", "primary": "#ffffff", "on-secondary": "#00363e", "on-secondary-fixed": "#001f25", "on-error": "#690005", "surface-dim": "#111418", "primary-container": "#b1f73f", "surface-bright": "#36393e", "secondary": "#5de6ff", "on-tertiary-fixed-variant": "#004395", "primary-fixed-dim": "#96da1e", "surface-container": "#1d2024", "surface-container-low": "#191c20", "on-primary-container": "#496f00", "on-primary": "#213600", "surface-container-high": "#272a2e", "on-secondary-fixed-variant": "#004e5a", "tertiary-fixed": "#d8e2ff", "on-tertiary-fixed": "#001a42", "on-tertiary": "#002e6a", "on-background": "#e1e2e8", "on-surface-variant": "#c2cab0", "tertiary-fixed-dim": "#adc6ff", "on-primary-fixed-variant": "#324f00", "error-container": "#93000a", "surface-tint": "#96da1e", "on-secondary-container": "#00515d", "background": "#111418", "inverse-on-surface": "#2e3135", "inverse-surface": "#e1e2e8", "error": "#ffb4ab", "on-error-container": "#ffdad6", "surface-container-lowest": "#0b0e12", "surface": "#111418", "secondary-fixed": "#a2eeff", "tertiary-container": "#d8e2ff", "outline": "#8c947c" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-xs": "0.25rem", "space-xl": "1.5rem", "gutter": "0.75rem", "space-md": "0.75rem", "margin": "1rem", "space-lg": "1rem", "space-sm": "0.5rem", "margin-desktop": "1.5rem", "gutter-desktop": "1rem" }, "fontFamily": { "headline-md": [ "Space Mono" ], "label-md": [ "Space Mono" ], "code-stream": [ "Space Mono" ], "label-lg": [ "Space Mono" ], "headline-lg": [ "Space Mono" ], "headline-xl-mobile": [ "Space Mono" ], "body-md": [ "Hanken Grotesk" ], "body-sm": [ "Hanken Grotesk" ], "label-sm": [ "Space Mono" ], "body-lg": [ "Hanken Grotesk" ], "headline-xl": [ "Space Mono" ] }, "fontSize": { "headline-md": [ "16px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "700" } ], "label-md": [ "11px", { "lineHeight": "14px", "letterSpacing": "0.06em", "fontWeight": "500" } ], "code-stream": [ "12px", { "lineHeight": "18px", "fontWeight": "400" } ], "label-lg": [ "13px", { "lineHeight": "18px", "letterSpacing": "0.02em", "fontWeight": "700" } ], "headline-lg": [ "20px", { "lineHeight": "28px", "letterSpacing": "-0.02em", "fontWeight": "700" } ], "headline-xl-mobile": [ "22px", { "lineHeight": "30px", "letterSpacing": "-0.03em", "fontWeight": "700" } ], "body-md": [ "14px", { "lineHeight": "20px", "fontWeight": "400" } ], "body-sm": [ "12px", { "lineHeight": "16px", "fontWeight": "400" } ], "label-sm": [ "10px", { "lineHeight": "12px", "letterSpacing": "0.08em", "fontWeight": "400" } ], "body-lg": [ "16px", { "lineHeight": "24px", "fontWeight": "400" } ], "headline-xl": [ "28px", { "lineHeight": "36px", "letterSpacing": "-0.04em", "fontWeight": "700" } ] } } } };</script></head><body class="bg-background font-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 z-50 h-14 bg-surface-container-low border-b border-surface-container-highest px-margin-desktop flex items-center justify-between"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-sm"><div class="w-6 h-6 bg-surface-container-highest flex items-center justify-center border border-outline-variant"><span class="material-symbols-outlined text-primary-container text-[18px]">terminal</span></div><span class="font-headline-md text-headline-md tracking-tight text-primary lowercase">workstreams</span></div><div class="h-4 w-px bg-surface-container-highest"></div><div class="flex items-center gap-space-sm bg-surface-container px-space-sm py-space-xs border border-surface-container-highest"><span class="material-symbols-outlined text-on-surface-variant text-[16px]">folder</span><span class="font-label-lg text-label-lg text-primary">api-platform</span><span class="font-code-stream text-code-stream text-on-surface-variant bg-surface-container-lowest px-space-xs py-[2px] border border-surface-container-highest">~/projects/api-platform</span><span class="material-symbols-outlined text-on-surface-variant text-[16px]">expand_more</span></div></div><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-md"><div class="flex items-center gap-space-xs bg-surface-container-lowest border border-outline-variant px-space-sm py-[3px]"><span class="w-1.5 h-1.5 rounded-full bg-primary-container animate-pulse"></span><span class="font-label-sm text-label-sm text-primary-container font-bold">LIVE</span></div><span class="font-label-sm text-label-sm text-on-surface-variant">Updated 2s ago</span><div class="flex items-center gap-space-xs bg-surface-container px-space-sm py-[3px] border border-surface-container-highest"><span class="font-label-sm text-label-sm text-on-surface">2s</span><span class="material-symbols-outlined text-on-surface-variant text-[14px]">expand_more</span></div></div><div class="h-4 w-px bg-surface-container-highest"></div><div class="flex items-center gap-space-md"><button class="relative p-space-xs text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-0.5 right-0.5 w-3.5 h-3.5 bg-primary-container text-on-primary-container font-label-sm text-[9px] flex items-center justify-center font-bold">1</span></button><div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center"><span class="material-symbols-outlined text-on-primary-container text-[18px]">person</span></div></div></div></header><aside class="fixed left-0 top-14 bottom-0 w-64 bg-surface-container-low border-r border-surface-container-highest z-40 flex flex-col justify-between p-space-sm"><nav class="flex flex-col gap-space-xs w-full" data-active-classes="bg-surface-container text-primary border-l-2 border-primary-container font-bold"><a class="flex items-center px-space-md py-space-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-md text-label-md tracking-wider uppercase" data-path="monitor" href="#">Monitor</a><a class="flex items-center px-space-md py-space-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-md text-label-md tracking-wider uppercase" data-path="events" href="#">Events</a><a aria-current="page" class="flex items-center px-space-md py-space-sm transition-colors tracking-wider uppercase bg-surface-container text-primary border-l-2 border-primary-container font-bold" data-path="workstreams" href="#">Workstreams</a><a class="flex items-center px-space-md py-space-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-md text-label-md tracking-wider uppercase" data-path="settings" href="#">Settings</a></nav><div class="border-t border-surface-container-highest pt-space-sm"><a class="flex items-center justify-between px-space-md py-space-sm text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-label-md text-label-md tracking-wider uppercase" data-path="docs" href="#">Docs</a></div></aside><div class="pl-64"><main class="w-full pt-14 px-gutter-desktop min-h-screen bg-background"><div class="flex flex-col w-full pb-space-xl">
+<!-- Top Command Ribbon -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md py-space-md mb-space-lg bg-surface-container-low px-space-lg">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-sm">
+<span class="font-headline-md text-headline-md text-primary tracking-tight">WORKSTREAMS MATRIX &amp; DISPATCH CONTROL</span>
+<span class="font-label-sm text-label-sm px-space-xs py-[2px] bg-primary-container text-on-primary-container font-bold">4/4 ACTIVE</span>
+<span class="font-label-sm text-label-sm px-space-xs py-[2px] bg-surface-container-highest text-secondary font-bold">NAMESPACED</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Active Git Worktree Isolation · 4 Subagent Sandboxes · Concurrent Task Execution Buffer</p>
+</div>
+<div class="flex items-center flex-wrap gap-space-sm">
+<button class="flex items-center gap-space-xs bg-surface-container px-space-md py-space-sm text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md uppercase tracking-wider">
+<span class="material-symbols-outlined text-[16px] text-secondary">alt_route</span>
+        Dry Run Merge
+      </button>
+<button class="flex items-center gap-space-xs bg-surface-container px-space-md py-space-sm text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md uppercase tracking-wider">
+<span class="material-symbols-outlined text-[16px] text-primary-fixed">sync</span>
+        Sync All Worktrees
+      </button>
+<button class="flex items-center gap-space-xs bg-primary-container px-space-md py-space-sm text-on-primary-container hover:bg-primary-fixed-dim transition-colors font-label-md text-label-md font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-[16px]">add_circle</span>
+        + Dispatch New Workstream
+      </button>
+</div>
+</div>
+<!-- Operational Telemetry Bar (Floor 1 architectural grouping) -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-md mb-space-xl">
+<!-- Telemetry Box 1 -->
+<div class="bg-surface-container p-space-md flex flex-col justify-between">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">ACTIVE WORKSTREAMS</span>
+<span class="w-2 h-2 rounded-full bg-primary-container animate-ping"></span>
+</div>
+<div class="flex items-baseline gap-space-sm">
+<span class="font-headline-xl text-headline-xl text-primary font-bold">4</span>
+<span class="font-label-md text-label-md text-primary-container">RUNNING</span>
+<span class="font-code-stream text-code-stream text-on-surface-variant">(0 BLOCKED · 1 SYNC)</span>
+</div>
+<div class="mt-space-sm h-1.5 w-full bg-surface-container-lowest overflow-hidden flex">
+<div class="bg-primary-container w-3/4 h-full"></div>
+<div class="bg-secondary-container w-1/4 h-full"></div>
+</div>
+</div>
+<!-- Telemetry Box 2 -->
+<div class="bg-surface-container p-space-md flex flex-col justify-between">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">ISOLATION MODE</span>
+<span class="material-symbols-outlined text-secondary text-[16px]">verified_user</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-md text-headline-md text-primary">Sparse-Checkout</span>
+<span class="font-code-stream text-code-stream text-on-surface-variant">Linux Namespaces + cgroups v2</span>
+</div>
+<div class="mt-space-sm flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant">
+<span>FS MOUNT: 4 VIRTUAL</span>
+<span class="text-secondary font-bold">SEC_LEVEL: STRICT</span>
+</div>
+</div>
+<!-- Telemetry Box 3 -->
+<div class="bg-surface-container p-space-md flex flex-col justify-between">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">MERGE SAFETY RADAR</span>
+<span class="font-label-sm text-label-sm text-primary-fixed bg-surface-container-highest px-space-xs">PASS 98.4%</span>
+</div>
+<div class="flex items-baseline gap-space-sm">
+<span class="font-headline-lg text-headline-lg text-primary">Lock-Free</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">OPTIMISTIC MERGE</span>
+</div>
+<div class="mt-space-sm flex items-center gap-space-xs font-label-sm text-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-primary-container text-[14px]">auto_fix_high</span>
+<span>Auto-AST Conflict Resolver Armed</span>
+</div>
+</div>
+<!-- Telemetry Box 4 -->
+<div class="bg-surface-container p-space-md flex flex-col justify-between">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">DISPATCH THROUGHPUT</span>
+<span class="font-label-sm text-label-sm text-secondary">42.8 OPS/M</span>
+</div>
+<div class="flex items-baseline gap-space-sm">
+<span class="font-headline-xl text-headline-xl text-primary font-bold">1.84M</span>
+<span class="font-label-md text-label-md text-on-surface-variant">TOKENS ACCUM</span>
+</div>
+<div class="mt-space-sm flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant">
+<span>IPC BURST: 120 msg/s</span>
+<span class="text-primary font-bold">PIDs: 4812, 4980, 5012, 5120</span>
+</div>
+</div>
+</div>
+<!-- SECTION 1: SUBAGENT WORKSTREAM FLEET CARDS (Grid of 4) -->
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="w-2.5 h-2.5 bg-primary-container inline-block"></span>
+<h2 class="font-headline-md text-headline-md text-primary tracking-wider uppercase">SUBAGENT WORKSTREAM FLEET [CONCURRENT THREADS: 4]</h2>
+</div>
+<span class="font-code-stream text-code-stream text-on-surface-variant">DISPATCH_EPOCH: 0x9AF804</span>
+</div>
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-space-md mb-space-xl">
+<!-- CARD 1: ws/api-auth -->
+<div class="bg-surface-container-low p-space-md flex flex-col justify-between">
+<!-- Card Banner -->
+<div>
+<div class="flex items-center justify-between pb-space-sm mb-space-sm bg-surface-container-lowest p-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary-container text-[18px]">terminal</span>
+<span class="font-headline-md text-headline-md text-primary">ws/api-auth</span>
+<span class="font-label-sm text-label-sm px-space-xs py-[1px] bg-primary-container text-on-primary-container font-bold">■ RUNNING</span>
+<span class="font-label-sm text-label-sm px-space-xs py-[1px] bg-surface-container text-secondary font-bold">SYNCED</span>
+</div>
+<div class="flex items-center gap-space-md font-code-stream text-code-stream text-on-surface-variant">
+<span>PID: 4812</span>
+<span class="text-primary-container">18ms latency</span>
+</div>
+</div>
+<!-- Spec & Subagent Identity -->
+<div class="flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant mb-space-sm px-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="text-primary font-bold">AGENT:</span>
+<span class="text-secondary bg-surface-container px-space-xs py-[1px]">claude-3-7-sonnet</span>
+<span class="text-on-surface-variant">(Architecture &amp; Tokenizer)</span>
+</div>
+<div class="flex items-center gap-space-xs text-on-surface">
+<span>ALLOC:</span>
+<span class="font-code-stream text-primary">142 MB / 512 MB</span>
+</div>
+</div>
+<!-- Git Worktree Location Readout -->
+<div class="bg-surface-container-lowest p-space-sm mb-space-sm flex flex-col gap-space-xs font-code-stream text-code-stream">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="text-on-surface">TREE: /tmp/workstreams/wt-api-auth</span>
+<span class="text-primary-fixed">feat/jwt-claims-rotation @ 8fd19e4</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-secondary truncate">DISPATCH: "Updating cryptographic key rotation in middleware/auth.go"</span>
+<span class="text-primary-container ml-space-sm shrink-0">+142 -18 L</span>
+</div>
+</div>
+<!-- Progress Sparkline & Metrics -->
+<div class="grid grid-cols-3 gap-space-sm py-space-xs mb-space-sm bg-surface-container px-space-sm">
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant block">TEST COVERAGE</span>
+<span class="font-headline-md text-headline-md text-primary font-bold">99.2%</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant block">FILES TOUCHED</span>
+<span class="font-headline-md text-headline-md text-primary font-bold">4 Mod</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant block">TOKEN STREAM</span>
+<div class="h-6 flex items-end gap-[2px]">
+<span class="w-1.5 h-2 bg-primary-container"></span>
+<span class="w-1.5 h-3 bg-primary-container"></span>
+<span class="w-1.5 h-5 bg-primary-container"></span>
+<span class="w-1.5 h-4 bg-primary-container"></span>
+<span class="w-1.5 h-6 bg-primary-container"></span>
+<span class="w-1.5 h-5 bg-primary-container"></span>
+<span class="w-1.5 h-3 bg-primary-container"></span>
+<span class="w-1.5 h-5 bg-primary-container"></span>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Panel Buttons -->
+<div class="flex items-center justify-between pt-space-sm bg-surface-container-lowest p-space-xs">
+<div class="flex items-center gap-space-xs">
+<button class="bg-surface-container hover:bg-surface-container-high px-space-sm py-space-xs font-label-md text-label-md text-on-surface">
+            Terminal PTY
+          </button>
+<button class="bg-surface-container hover:bg-surface-container-high px-space-sm py-space-xs font-label-md text-label-md text-on-surface">
+            Diff Viewer (+124)
+          </button>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="bg-surface-container hover:bg-surface-container-high px-space-sm py-space-xs font-label-md text-label-md text-primary-fixed">
+            Rebase onto Main
+          </button>
+<button class="bg-surface-container hover:bg-surface-container-high px-space-sm py-space-xs font-label-md text-label-md text-error">
+            Pause Subagent
+          </button>
+</div>
+</div>
+</div>
+<!-- CARD 2: ws/web-console -->
+<div class="bg-surface-container-low p-space-md flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-space-sm mb-space-sm bg-surface-container-lowest p-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-[18px]">terminal</span>
+<span class="font-headline-md text-headline-md text-primary">ws/web-console</span>
+<span class="font-label-sm text-label-sm px-space-xs py-[1px] bg-secondary-container text-on-secondary-container font-bold animate-pulse">STREAMING CHUNKS</span>
+</div>
+<div class="flex items-center gap-space-md font-code-stream text-code-stream text-on-surface-variant">
+<span>PID: 4980</span>
+<span class="text-secondary">22ms latency</span>
+</div>
+</div>
+<div class="flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant mb-space-sm px-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="text-primary font-bold">AGENT:</span>
+<span class="text-secondary bg-surface-container px-space-xs py-[1px]">gpt-4o-code</span>
+<span class="text-on-surface-variant">(Frontend &amp; Topology Specialist)</span>
+</div>
+<div class="flex items-center gap-space-xs text-on-surface">
+<span>ALLOC:</span>
+<span class="font-code-stream text-primary">218 MB / 512 MB</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-space-sm mb-space-sm flex flex-col gap-space-xs font-code-stream text-code-stream">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="text-on-surface">TREE: /tmp/workstreams/wt-web-console</span>
+<span class="text-primary-fixed">ui/radial-telemetry-hud @ 3b901a1</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-secondary truncate">DISPATCH: "Rendering SVG polar dial rings and quadratic bezier conduit lines"</span>
+<span class="text-primary-container ml-space-sm shrink-0">+380 -45 L</span>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-space-sm py-space-xs mb-space-sm bg-surface-container px-space-sm">
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant block">BUILD STATUS</span>
+<span class="font-headline-md text-headline-md text-primary font-bold">Vite HMR OK</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant block">FILES TOUCHED</span>
+<span class="font-headline-md text-headline-md text-primary font-bold">7 Mod</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant block">TOKEN STREAM</span>
+<div class="h-6 flex items-end gap-[2px]">
+<span class="w-1.5 h-6 bg-secondary"></span>
+<span class="w-1.5 h-5 bg-secondary"></span>
+<span class="w-1.5 h-6 bg-secondary"></span>
+<span class="w-1.5 h-4 bg-secondary"></span>
+<span class="w-1.5 h-3 bg-secondary"></span>
+<span class="w-1.5 h-6 bg-secondary"></span>
+<span class="w-1.5 h-5 bg-secondary"></span>
+<span class="w-1.5 h-6 bg-secondary"></span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-sm bg-surface-container-lowest p-space-xs">
+<div class="flex items-center gap-space-xs">
+<button class="bg-surface-container hover:bg-surface-container-high px-space-sm py-space-xs font-label-md text-label-md text-on-surface">
+            Terminal PTY
+          </button>
+<button class="bg-surface-container hover:bg-surface-container-high px-space-sm py-space-xs font-label-md text-label-md text-on-surface">
+            Diff Viewer (+335)
+          </button>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="bg-surface-container hover:bg-surface-container-high px-space-sm py-space-xs font-label-md text-label-md text-primary-fixed">
+            Rebase onto Main
+          </button>
+<button class="bg-surface-container hover:bg-surface-container-high px-space-sm py-space-xs font-label-md text-label-md text-error">
+            Pause Subagent
+          </button>
+</div>
+</div>
+</div>
+<!-- CARD 3: ws/integration-tests -->
+<div class="bg-surface-container-low p-space-md flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-space-sm mb-space-sm bg-surface-container-lowest p-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary-container text-[18px]">terminal</span>
+<span class="font-headline-md text-headline-md text-primary">ws/integration-tests</span>
+<span class="font-label-sm text-label-sm px-space-xs py-[1px] bg-primary-container text-on-primary-container font-bold">EXECUTING PYTEST</span>
+</div>
+<div class="flex items-center gap-space-md font-code-stream text-code-stream text-on-surface-variant">
+<span>PID: 5012</span>
+<span class="text-primary-container">31ms latency</span>
+</div>
+</div>
+<div class="flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant mb-space-sm px-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="text-primary font-bold">AGENT:</span>
+<span class="text-secondary bg-surface-container px-space-xs py-[1px]">deepseek-coder-v2</span>
+<span class="text-on-surface-variant">(Test Generation &amp; Fuzzing)</span>
+</div>
+<div class="flex items-center gap-space-xs text-on-surface">
+<span>ALLOC:</span>
+<span class="font-code-stream text-primary">98 MB / 512 MB</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-space-sm mb-space-sm flex flex-col gap-space-xs font-code-stream text-code-stream">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="text-on-surface">TREE: /tmp/workstreams/wt-integration-tests</span>
+<span class="text-primary-fixed">test/e2e-polar-conduits @ e4a7812</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-secondary truncate">DISPATCH: "Fuzz testing socket jitter &amp; IPC message queue backpressure"</span>
+<span class="text-primary-container ml-space-sm shrink-0">84/84 PASS</span>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-space-sm py-space-xs mb-space-sm bg-surface-container px-space-sm">
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant block">PASS RATE</span>
+<span class="font-headline-md text-headline-md text-primary font-bold">100% (84/84)</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant block">RUN DURATION</span>
+<span class="font-headline-md text-headline-md text-primary font-bold">2.14s</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant block">TOKEN STREAM</span>
+<div class="h-6 flex items-end gap-[2px]">
+<span class="w-1.5 h-1 bg-primary-container"></span>
+<span class="w-1.5 h-3 bg-primary-container"></span>
+<span class="w-1.5 h-2 bg-primary-container"></span>
+<span class="w-1.5 h-4 bg-primary-container"></span>
+<span class="w-1.5 h-5 bg-primary-container"></span>
+<span class="w-1.5 h-4 bg-primary-container"></span>
+<span class="w-1.5 h-2 bg-primary-container"></span>
+<span class="w-1.5 h-1 bg-primary-container"></span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-sm bg-surface-container-lowest p-space-xs">
+<div class="flex items-center gap-space-xs">
+<button class="bg-surface-container hover:bg-surface-container-high px-space-sm py-space-xs font-label-md text-label-md text-on-surface">
+            Terminal PTY
+          </button>
+<button class="bg-surface-container hover:bg-surface-container-high px-space-sm py-space-xs font-label-md text-label-md text-on-surface">
+            Diff Viewer (Suite)
+          </button>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="bg-surface-container hover:bg-surface-container-high px-space-sm py-space-xs font-label-md text-label-md text-primary-fixed">
+            Rebase onto Main
+          </button>
+<button class="bg-surface-container hover:bg-surface-container-high px-space-sm py-space-xs font-label-md text-label-md text-error">
+            Pause Subagent
+          </button>
+</div>
+</div>
+</div>
+<!-- CARD 4: ws/docs -->
+<div class="bg-surface-container-low p-space-md flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-space-sm mb-space-sm bg-surface-container-lowest p-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-error text-[18px]">terminal</span>
+<span class="font-headline-md text-headline-md text-primary">ws/docs</span>
+<span class="font-label-sm text-label-sm px-space-xs py-[1px] bg-error-container text-on-error-container font-bold">DIRTY BUFFER</span>
+<span class="font-label-sm text-label-sm px-space-xs py-[1px] bg-surface-container text-error font-bold">AWAITING ACK</span>
+</div>
+<div class="flex items-center gap-space-md font-code-stream text-code-stream text-on-surface-variant">
+<span>PID: 5120</span>
+<span class="text-error">54ms latency</span>
+</div>
+</div>
+<div class="flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant mb-space-sm px-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="text-primary font-bold">AGENT:</span>
+<span class="text-secondary bg-surface-container px-space-xs py-[1px]">gemini-2.0-flash</span>
+<span class="text-on-surface-variant">(Documentation Engine)</span>
+</div>
+<div class="flex items-center gap-space-xs text-on-surface">
+<span>ALLOC:</span>
+<span class="font-code-stream text-primary">64 MB / 512 MB</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-space-sm mb-space-sm flex flex-col gap-space-xs font-code-stream text-code-stream">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="text-on-surface">TREE: /tmp/workstreams/wt-docs</span>
+<span class="text-error">docs/api-v2-spec @ 0c19b44</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-error truncate">WARNING: Conflicting base branch detected in docs/mesh.md:42</span>
+<span class="text-error ml-space-sm shrink-0">! CONFLICT</span>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-space-sm py-space-xs mb-space-sm bg-surface-container px-space-sm">
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant block">SCHEMA VALIDITY</span>
+<span class="font-headline-md text-headline-md text-primary font-bold">OpenAPI 3.1 OK</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant block">STATE MUTATION</span>
+<span class="font-headline-md text-headline-md text-error font-bold">1 Stalled</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant block">TOKEN STREAM</span>
+<div class="h-6 flex items-end gap-[2px]">
+<span class="w-1.5 h-1 bg-error"></span>
+<span class="w-1.5 h-1 bg-error"></span>
+<span class="w-1.5 h-0 bg-error"></span>
+<span class="w-1.5 h-1 bg-error"></span>
+<span class="w-1.5 h-0 bg-error"></span>
+<span class="w-1.5 h-0 bg-error"></span>
+<span class="w-1.5 h-1 bg-error"></span>
+<span class="w-1.5 h-0 bg-error"></span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-sm bg-surface-container-lowest p-space-xs">
+<div class="flex items-center gap-space-xs">
+<button class="bg-surface-container hover:bg-surface-container-high px-space-sm py-space-xs font-label-md text-label-md text-on-surface">
+            Terminal PTY
+          </button>
+<button class="bg-error-container text-on-error-container hover:bg-on-error hover:text-primary px-space-sm py-space-xs font-label-md text-label-md font-bold">
+            Resolve Conflict
+          </button>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="bg-surface-container hover:bg-surface-container-high px-space-sm py-space-xs font-label-md text-label-md text-error">
+            Force Overwrite
+          </button>
+<button class="bg-surface-container hover:bg-surface-container-high px-space-sm py-space-xs font-label-md text-label-md text-on-surface">
+            Restart
+          </button>
+</div>
+</div>
+</div>
+</div>
+<!-- SECTION 2: SPLIT-PANE RADAR & IPC TELEMETRY -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-md">
+<!-- LEFT PANE: TIMELINE & CONFLICT RADAR (col-span-7) -->
+<div class="xl:col-span-7 bg-surface-container-low p-space-md flex flex-col justify-between">
+<div class="flex items-center justify-between pb-space-sm mb-space-md bg-surface-container-lowest p-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary-fixed text-[18px]">timeline</span>
+<span class="font-headline-md text-headline-md text-primary">DISPATCH TIMELINE &amp; CONFLICT RADAR</span>
+</div>
+<div class="flex items-center gap-space-sm font-label-sm text-label-sm">
+<span class="text-on-surface-variant">AUTO-MERGE:</span>
+<span class="text-primary-container font-bold">ACTIVE (AST LOCK-FREE)</span>
+</div>
+</div>
+<!-- Graphic Git Swimlane Visualizer -->
+<div class="bg-surface-container-lowest p-space-md flex flex-col gap-space-md mb-space-md">
+<!-- Main Branch Track -->
+<div class="flex items-center gap-space-md">
+<span class="font-code-stream text-code-stream text-primary font-bold w-24 shrink-0">main (trunk)</span>
+<div class="relative flex-1 flex items-center h-6">
+<div class="absolute inset-x-0 h-0.5 bg-surface-container-highest"></div>
+<div class="absolute left-[5%] flex items-center gap-space-xs">
+<span class="w-3 h-3 rounded-full bg-primary flex items-center justify-center"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">c701bf4</span>
+</div>
+<div class="absolute left-[38%] flex items-center gap-space-xs">
+<span class="w-3 h-3 rounded-full bg-primary flex items-center justify-center"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">8fd19e4</span>
+</div>
+<div class="absolute left-[75%] flex items-center gap-space-xs">
+<span class="w-3 h-3 rounded-full bg-primary-container ring-4 ring-background flex items-center justify-center"></span>
+<span class="font-label-sm text-label-sm text-primary-container font-bold">HEAD (v2.4.1)</span>
+</div>
+</div>
+</div>
+<!-- WT 1: feat/jwt-claims-rotation -->
+<div class="flex items-center gap-space-md">
+<span class="font-code-stream text-code-stream text-secondary w-24 shrink-0">wt-api-auth</span>
+<div class="relative flex-1 flex items-center h-6">
+<div class="absolute inset-x-0 h-0.5 bg-surface-container-highest"></div>
+<div class="absolute left-[15%] w-[45%] h-0.5 bg-secondary"></div>
+<div class="absolute left-[15%] w-2 h-2 rounded-full bg-secondary"></div>
+<div class="absolute left-[35%] flex items-center gap-space-xs">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>
+<span class="font-label-sm text-label-sm text-secondary">feat/jwt</span>
+</div>
+<div class="absolute left-[60%] flex items-center gap-space-xs">
+<span class="w-2.5 h-2.5 rounded-full bg-primary-fixed"></span>
+<span class="font-label-sm text-label-sm text-primary-fixed">merge-ready</span>
+</div>
+</div>
+</div>
+<!-- WT 2: ui/radial-telemetry-hud -->
+<div class="flex items-center gap-space-md">
+<span class="font-code-stream text-code-stream text-secondary w-24 shrink-0">wt-web-ui</span>
+<div class="relative flex-1 flex items-center h-6">
+<div class="absolute inset-x-0 h-0.5 bg-surface-container-highest"></div>
+<div class="absolute left-[25%] w-[55%] h-0.5 bg-secondary-container"></div>
+<div class="absolute left-[25%] w-2 h-2 rounded-full bg-secondary-container"></div>
+<div class="absolute left-[50%] flex items-center gap-space-xs">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary-container"></span>
+<span class="font-label-sm text-label-sm text-secondary-container">hud-polar</span>
+</div>
+<div class="absolute left-[80%] flex items-center gap-space-xs">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary-container animate-ping"></span>
+<span class="font-label-sm text-label-sm text-secondary">streaming</span>
+</div>
+</div>
+</div>
+<!-- WT 3: test/e2e-polar-conduits -->
+<div class="flex items-center gap-space-md">
+<span class="font-code-stream text-code-stream text-primary-fixed w-24 shrink-0">wt-tests</span>
+<div class="relative flex-1 flex items-center h-6">
+<div class="absolute inset-x-0 h-0.5 bg-surface-container-highest"></div>
+<div class="absolute left-[40%] w-[35%] h-0.5 bg-primary-container"></div>
+<div class="absolute left-[40%] w-2 h-2 rounded-full bg-primary-container"></div>
+<div class="absolute left-[75%] flex items-center gap-space-xs">
+<span class="w-2.5 h-2.5 rounded-full bg-primary-container"></span>
+<span class="font-label-sm text-label-sm text-primary-container">84/84 PASS</span>
+</div>
+</div>
+</div>
+<!-- WT 4: docs/api-v2-spec -->
+<div class="flex items-center gap-space-md">
+<span class="font-code-stream text-code-stream text-error w-24 shrink-0">wt-docs</span>
+<div class="relative flex-1 flex items-center h-6">
+<div class="absolute inset-x-0 h-0.5 bg-surface-container-highest"></div>
+<div class="absolute left-[30%] w-[40%] h-0.5 bg-error"></div>
+<div class="absolute left-[30%] w-2 h-2 rounded-full bg-error"></div>
+<div class="absolute left-[70%] flex items-center gap-space-xs">
+<span class="w-3 h-3 bg-error text-surface-container-lowest font-bold flex items-center justify-center text-[10px]">!</span>
+<span class="font-label-sm text-label-sm text-error font-bold">CONFLICT: mesh.md:42</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Swimlane Diagnostic Summary Footer -->
+<div class="flex items-center justify-between font-code-stream text-code-stream text-on-surface-variant pt-space-xs">
+<span class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+          Non-overlapping AST changes: 94.2% automatically resolveable
+        </span>
+<button class="text-secondary hover:text-primary transition-colors uppercase font-bold font-label-sm text-label-sm">
+          View Interactive Graph →
+        </button>
+</div>
+</div>
+<!-- RIGHT PANE: INTER-AGENT IPC CONDUITS (col-span-5) -->
+<div class="xl:col-span-5 bg-surface-container-low p-space-md flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-space-sm mb-space-sm bg-surface-container-lowest p-space-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-[18px]">sync_alt</span>
+<span class="font-headline-md text-headline-md text-primary">INTER-AGENT IPC CONDUITS</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-label-sm text-label-sm text-secondary font-bold">120 msg/s</span>
+</div>
+</div>
+<!-- Filterable Tabs -->
+<div class="flex items-center gap-space-xs mb-space-sm font-label-md text-label-md uppercase">
+<button class="px-space-sm py-space-xs bg-surface-container-highest text-primary font-bold">All (64)</button>
+<button class="px-space-sm py-space-xs bg-surface-container text-on-surface-variant hover:text-on-surface">Dispatches (32)</button>
+<button class="px-space-sm py-space-xs bg-surface-container text-on-surface-variant hover:text-on-surface">Git Ops (18)</button>
+<button class="px-space-sm py-space-xs bg-surface-container text-error hover:bg-error hover:text-surface">Alerts (1)</button>
+</div>
+<!-- Monospace Log Stream Table -->
+<div class="bg-surface-container-lowest overflow-x-auto flex flex-col font-code-stream text-code-stream">
+<!-- Row 1 -->
+<div class="p-space-sm bg-surface-container flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="text-on-surface-variant shrink-0">14:02:18.421</span>
+<span class="text-secondary font-bold shrink-0">wt-api-auth → wt-tests</span>
+</div>
+<span class="text-primary truncate ml-space-sm">NOTIFY_SCHEMA_MUTATION(jwt_claims.go)</span>
+<span class="text-primary-container font-bold ml-space-sm shrink-0">ACK 200</span>
+</div>
+<!-- Row 2 -->
+<div class="p-space-sm bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="text-on-surface-variant shrink-0">14:02:19.012</span>
+<span class="text-primary-container font-bold shrink-0">wt-tests → coordinator</span>
+</div>
+<span class="text-primary truncate ml-space-sm">EXEC_SUITE_COMPLETE(84/84 PASS, 2.14s)</span>
+<span class="text-primary-container font-bold ml-space-sm shrink-0">OK 0</span>
+</div>
+<!-- Row 3 -->
+<div class="p-space-sm bg-surface-container flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="text-on-surface-variant shrink-0">14:02:19.884</span>
+<span class="text-secondary font-bold shrink-0">wt-web-ui → coordinator</span>
+</div>
+<span class="text-primary truncate ml-space-sm">HMR_EMIT_PATCH(radial-hud.svg, 380L)</span>
+<span class="text-secondary font-bold ml-space-sm shrink-0">STREAM</span>
+</div>
+<!-- Row 4 -->
+<div class="p-space-sm bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="text-on-surface-variant shrink-0">14:02:20.104</span>
+<span class="text-error font-bold shrink-0">wt-docs → wt-api-auth</span>
+</div>
+<span class="text-error truncate ml-space-sm">BASE_HASH_MISMATCH(mesh.md:42 conflicting)</span>
+<span class="text-error font-bold ml-space-sm shrink-0">ERR 409</span>
+</div>
+<!-- Row 5 -->
+<div class="p-space-sm bg-surface-container flex items-center justify-between">
+<div class="flex items-center gap-space-sm">
+<span class="text-on-surface-variant shrink-0">14:02:20.312</span>
+<span class="text-primary font-bold shrink-0">coordinator → wt-docs</span>
+</div>
+<span class="text-primary truncate ml-space-sm">HOLD_MERGE_DISPATCH(PID:5120 waiting ACK)</span>
+<span class="text-on-surface-variant font-bold ml-space-sm shrink-0">STALL</span>
+</div>
+</div>
+</div>
+<!-- Log Command Input Footer -->
+<div class="mt-space-sm flex items-center bg-surface-container-lowest px-space-sm py-space-xs">
+<span class="font-code-stream text-code-stream text-primary-container mr-space-xs">&gt;</span>
+<input class="bg-transparent border-none text-on-surface font-code-stream text-code-stream flex-1 focus:outline-none" placeholder="inject IPC message to bus (e.g. broadcast:sync --force)..." type="text"/>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">[RETURN]</span>
+</div>
+</div>
+</div>
+</div></main></div></body></html>

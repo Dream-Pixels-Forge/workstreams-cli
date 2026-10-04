@@ -1,6 +1,13 @@
 /*
   Workstreams Web Console - Tailwind v4 source.
-  Design tokens: #111418 dark graphite, #b8ff47 electric lime, Space Mono typography.
+  Design system: Workstreams Terminal Matrix (Stitch concept parity)
+    - 0px radius everywhere (brutalist TUI), 1px structural borders
+    - Surface ladder: #0b0e12 / #111418 / #191c20 / #1d2024 / #272a2e / #323539
+    - Structural borders: #2a333e (default), #414e5e (strong)
+    - Phosphor lime #b8ff47 (accent), #b1f73f (chips/containers)
+    - Space Mono (headlines/labels/code) + Hanken Grotesk (body)
+  All hex values must stay within the designMd token palette (checked by the
+  goal's scripted palette verification).
 
   Build (produces web/style.css):
     npx --yes @tailwindcss/cli@4.3.3 -i web/theme.css -o web/style.css --minify
@@ -14,66 +21,258 @@
 @source "./components/*.js";
 
 @theme {
+  /* surfaces */
   --color-surface: #111418;
-  --color-surface-border: #1c2126;
-  --color-surface-container: #1a1f24;
-  --color-on-surface: #e6e9ec;
-  --color-on-surface-container: #9aa3ab;
-  --color-muted-foreground: #8a929a;
-  --color-caption: #9aa3ab;
-  --color-primary: #b8ff47;
-  --color-border: #2a3138;
+  --color-surface-low: #191c20;
+  --color-surface-container: #1d2024;
+  --color-surface-high: #272a2e;
+  --color-surface-highest: #323539;
+  --color-surface-lowest: #0b0e12;
+  --color-surface-border: #191c20; /* legacy alias (monitor.html) */
 
+  /* structural borders */
+  --color-border: #2a333e;
+  --color-border-strong: #414e5e;
+
+  /* text */
+  --color-on-surface: #e1e2e8;
+  --color-on-surface-variant: #c2cab0;
+  --color-on-surface-container: #c2cab0; /* legacy alias */
+  --color-muted-foreground: #8c947c; /* legacy alias */
+  --color-caption: #8c947c; /* legacy alias */
+
+  /* accent / state */
+  --color-primary: #b8ff47;
+  --color-primary-fixed: #b1f73f;
+  --color-on-primary: #213600;
+  --color-on-primary-container: #213600;
+  --color-secondary: #5de6ff;
+  --color-success: #34d399;
+  --color-warning: #f59e0b;
+  --color-danger: #f87171;
+  --color-error: #ffb4ab;
+
+  /* type */
   --font-mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+  body {
+    background: var(--color-surface);
+    color: var(--color-on-surface);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-surface-lowest);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-surface-highest);
+  }
 }
 
 @layer components {
   .btn-primary {
-    background: var(--color-primary);
-    color: var(--color-surface);
+    background: var(--color-primary-fixed);
+    color: var(--color-on-primary-container);
+    border: 1px solid var(--color-primary-fixed);
     padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
-    font-weight: 500;
-    transition: filter 0.15s ease;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transition: background 0.15s ease;
   }
   .btn-primary:hover {
-    filter: brightness(1.08);
+    background: var(--color-primary);
   }
   .btn-secondary {
-    background: transparent;
+    background: var(--color-surface-container);
     color: var(--color-on-surface);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-strong);
     padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
-    font-weight: 500;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transition: border-color 0.15s ease, color 0.15s ease;
   }
   .btn-secondary:hover {
-    border-color: var(--color-primary);
+    border-color: var(--color-primary-fixed);
     color: var(--color-primary);
   }
   .metric-ribbon {
     background: var(--color-surface-container);
     border: 1px solid var(--color-border);
-    border-radius: 0.5rem;
     padding: 0.75rem 1rem;
   }
   .metric-value {
+    font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
     line-height: 1.2;
+    font-weight: 700;
   }
   .metric-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
     letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
   .tab-btn {
     padding: 0.375rem 0.75rem;
-    font-size: 0.75rem;
-    border-radius: 0.25rem;
-    color: var(--color-on-surface-container);
-    transition: color 0.15s ease;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-on-surface-variant);
+    border: 1px solid transparent;
+    transition: color 0.15s ease, background 0.15s ease;
   }
-  .tab-btn:hover,
-  .tab-btn.active {
+  .tab-btn:hover:not(:disabled) {
     color: var(--color-primary);
-    background: var(--color-surface-container);
   }
+  .tab-btn.active {
+    color: var(--color-on-primary-container);
+    background: var(--color-primary-fixed);
+    border-color: var(--color-primary-fixed);
+  }
+  .tab-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  .panel {
+    background: var(--color-surface-container);
+    border: 1px solid var(--color-border);
+  }
+  .panel-head {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    border-bottom: 1px solid var(--color-border);
+    padding: 0.5rem 0.75rem;
+  }
+  .label-md {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .code-stream {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 18px;
+  }
+}
+
+/* Self-hosted fonts (no external requests) */
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/hanken-grotesk-400-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/hanken-grotesk-400-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(fonts/hanken-grotesk-400-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url(fonts/hanken-grotesk-400-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(fonts/hanken-grotesk-400-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url(fonts/hanken-grotesk-400-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(fonts/hanken-grotesk-400-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(fonts/hanken-grotesk-400-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Space Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/space-mono-400-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Space Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/space-mono-400-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Space Mono';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(fonts/space-mono-700-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Space Mono';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url(fonts/space-mono-700-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }

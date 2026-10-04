@@ -5,128 +5,151 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Workstreams Web Console</title>
   <meta name="description" content="Live console for the workstreams CLI — dispatch subagents, monitor worktrees, events and config.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='3' fill='%23b8ff47'/></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%23b8ff47'/><rect x='2' y='2' width='12' height='12' fill='%23111418'/><rect x='4' y='7' width='6' height='2' fill='%23b8ff47'/></svg>">
   <link rel="stylesheet" href="style.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-surface text-on-surface font-mono">
+<body class="bg-surface text-on-surface font-sans">
 
-  <!-- Top Utility Bar (56px height) -->
-  <header class="sticky top-0 z-20 bg-surface-border border-b border-border flex items-center justify-between h-14 px-4 text-sm">
-    <div class="relative flex items-center">
-      <span class="select-none mr-2 text-muted-foreground" id="header-project">workstreams</span>
-      <svg class="w-4 h-4 mx-1 text-muted-foreground opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h12m0 0l-4-4L5 8Zm8 0l4-4m0 0l-4 4m0 0l4 4"/>
+  <!-- Top Utility Bar (56px) -->
+  <header class="fixed top-0 inset-x-0 z-50 h-14 bg-surface-low border-b border-surface-highest flex items-center justify-between px-6">
+    <!-- Repository selector -->
+    <div class="flex items-center gap-2 bg-surface-container border border-surface-highest px-3 py-1.5">
+      <svg class="w-4 h-4 text-on-surface-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+      </svg>
+      <span id="header-project" class="font-mono text-[13px] font-bold text-on-surface">workstreams</span>
+      <span id="header-path" class="hidden sm:inline font-mono text-xs text-on-surface-variant bg-surface-lowest border border-surface-highest px-1.5 py-px">—</span>
+      <svg class="w-4 h-4 text-on-surface-variant" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M19 9l-7 7-7-7"/>
       </svg>
     </div>
-    <div class="flex items-center gap-2">
-      <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-mono bg-surface-container/50 text-on-surface-container/80">
-        <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
-        <span class="align-middle">● LIVE</span>
-      </span>
-      <span class="text-caption" id="header-updated">connecting…</span>
+
+    <div class="flex items-center gap-4">
+      <!-- LIVE status + poll switcher -->
+      <div class="flex items-center gap-3">
+        <span class="inline-flex items-center gap-1.5 bg-surface-lowest border border-border-strong px-2.5 py-[3px]">
+          <span class="w-1.5 h-1.5 bg-primary-fixed animate-pulse"></span>
+          <span class="font-mono text-[10px] font-bold tracking-[0.08em] text-primary-fixed">LIVE</span>
+        </span>
+        <span class="font-mono text-[10px] tracking-[0.06em] text-caption" id="header-updated">connecting…</span>
+        <span class="inline-flex items-center gap-1 bg-surface-container border border-surface-highest px-2 py-[3px] font-mono text-[10px] text-on-surface" title="Poll interval">2s</span>
+      </div>
+
+      <span class="w-px h-4 bg-surface-highest"></span>
+
+      <!-- Alerts + avatar -->
+      <div class="flex items-center gap-3">
+        <button id="header-alerts-btn" class="relative p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-high transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary" aria-label="Alert notifications: 0 active">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a2.032 2.032 0 00-1.421-1.825l-1.41 1.41m0 0L15.17 10.7m-1.41 1.41l-4.578 4.568A2.032 2.032 0 018 16.158V13a6 6 0 016-6v0"/>
+          </svg>
+          <span id="header-alerts" class="absolute top-0 right-0 min-w-3.5 h-3.5 px-0.5 bg-primary-fixed text-on-primary-container font-mono text-[9px] font-bold flex items-center justify-center">0</span>
+        </button>
+        <div class="w-8 h-8 bg-primary-fixed text-on-primary-container font-mono text-xs font-bold flex items-center justify-center" title="User">UH</div>
+      </div>
     </div>
-    <button class="relative rounded-md p-1.5 hover:bg-surface-container focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset focus-visible:outline-primary" aria-label="Notifications">
-      <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a2.032 2.032 0 011.421-1.825l1.41 1.41m0 0l-1.41 1.41A2.032 2.032 0 0114.158 11v3.158c0 .538-.21 1.043-.585 1.414L11.421 15.908A2.032 2.032 0 0111 13v3.158c0 .538-.21 1.043-.585 1.414zM10.5 7.032L11 8m0 0l-.999-.032L10 7.032m0 0l.999.032L11 8m-4.5 0a2.25 2.25 0 110-4.5 2.25 2.25 0 010 4.5z"/>
-      </svg>
-      <span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-primary ring-1 ring-primary/60"></span>
-    </button>
-    <div class="hidden w-8 h-8 rounded-full bg-gradient-to-br-primary/20 text-primary opacity-60">UH</div>
   </header>
 
-  <!-- Left Navigation Rail (220px width) -->
-  <aside class="fixed left-0 top-16 h-screen w-24 transition-transform duration-200 ease-in-out" aria-label="Main navigation">
-    <div class="h-full flex flex-col items-center justify-between pt-6">
-      <!-- Workstreams Wordmark Header -->
-      <div class="w-full flex flex-col items-center gap-2 text-xs uppercase tracking-widest">
-        <span class="text-primary">workstreams</span>
-        <span class="hidden sm:block text-on-surface-container tracking-normal">CLI Orchestrator</span>
-      </div>
+  <!-- Left Navigation Rail (220px) -->
+  <aside class="fixed left-0 top-14 bottom-0 w-[220px] bg-surface-low border-r border-surface-highest z-40 flex flex-col justify-between p-2" aria-label="Main navigation">
+    <!-- Wordmark -->
+    <div class="flex items-center gap-2.5 px-3 py-3">
+      <span class="w-6 h-6 bg-surface-highest border border-border-strong flex items-center justify-center">
+        <svg class="w-3.5 h-3.5 text-primary-fixed" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2.5" d="M5 7l5 5-5 5m7 0h7"/>
+        </svg>
+      </span>
+      <span class="font-mono text-base font-bold tracking-tight text-primary lowercase">workstreams</span>
+    </div>
 
-      <!-- Primary Navigation Links -->
-      <nav class="w-full flex flex-col gap-1 my-4">
-        <button data-nav="monitor" class="w-full flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium opacity-60 hover:text-primary transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10Z"/>
-          </svg>
-          <span class="hidden sm:block">Monitor</span>
-        </button>
+    <!-- Primary Navigation Links -->
+    <nav class="flex flex-col gap-1 w-full">
+      <button data-nav="monitor" class="w-full flex items-center gap-3 px-4 py-2.5 font-mono text-[11px] font-medium tracking-[0.06em] uppercase transition-colors hover:bg-surface-high hover:text-on-surface">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10Z"/>
+        </svg>
+        <span>Monitor</span>
+      </button>
 
-        <button data-nav="events" class="w-full flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium opacity-60 hover:text-primary transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h.5l-.5 8.5a2 2 0 01-1.987 2.18l-2.56-2.38zM15 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h.5l-.5 8.5a2 2 0 01-1.987 2.18l-2.56-2.38z"/>
-          </svg>
-          <span class="hidden sm:block">Events</span>
-        </button>
+      <button data-nav="events" class="w-full flex items-center gap-3 px-4 py-2.5 font-mono text-[11px] font-medium tracking-[0.06em] uppercase transition-colors hover:bg-surface-high hover:text-on-surface">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M4 12h4l3-8 4 16 3-8h4"/>
+        </svg>
+        <span>Events</span>
+      </button>
 
-        <button data-nav="workstreams" class="w-full flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium opacity-60 hover:text-primary transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h.5l-.5 8.5a2 2 0 01-1.987 2.18l-2.56-2.38zM15 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h.5l-.5 8.5a2 2 0 01-1.987 2.18l-2.56-2.38z"/>
-          </svg>
-          <span class="hidden sm:block">Workstreams</span>
-        </button>
+      <button data-nav="workstreams" class="w-full flex items-center gap-3 px-4 py-2.5 font-mono text-[11px] font-medium tracking-[0.06em] uppercase transition-colors hover:bg-surface-high hover:text-on-surface">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M4 6h7M4 12h16M4 18h7M17 6v12m0 0l-3-3m3 3l3-3"/>
+        </svg>
+        <span>Workstreams</span>
+      </button>
 
-        <button data-nav="settings" class="w-full flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium opacity-60 hover:text-primary transition-colors">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 7a4 4 0 014 4v.5m0 0a3 3 0 00-6 0V7a4 4 0 014-4z"/>
-          </svg>
-          <span class="hidden sm:block">Settings</span>
-        </button>
-      </nav>
+      <button data-nav="settings" class="w-full flex items-center gap-3 px-4 py-2.5 font-mono text-[11px] font-medium tracking-[0.06em] uppercase transition-colors hover:bg-surface-high hover:text-on-surface">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M12 15a3 3 0 100-6 3 3 0 000 6z"/>
+          <path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 008 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H2a2 2 0 110-4h.09A1.65 1.65 0 004.6 8a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 3.68 1.65 1.65 0 0010 2.17V2a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 8v.09a1.65 1.65 0 001.51 1H22a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+        </svg>
+        <span>Settings</span>
+      </button>
+    </nav>
 
-      <!-- Footer Link -->
-      <div class="text-xs opacity-40">
-        <a href="https://github.com/dimona/workstreams" target="_blank" class="hover:underline underline-offset-2">
-          Docs
-          <svg class="w-3 h-3 ml-1 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7h-2.875c5.523-3.366 5.523-8.8 0-12.166C15.523-8.8 9.523-8.8 4-12.166S2.477-8.8 1.125-5.125L12 2z"/>
+    <!-- Footer Link -->
+    <div class="border-t border-surface-highest pt-2">
+        <a href="https://github.com/Dream-Pixels-Forge/workstreams-cli" target="_blank" rel="noopener" class="flex items-center justify-between px-4 py-2.5 font-mono text-[11px] font-medium tracking-[0.06em] uppercase text-on-surface-variant hover:bg-surface-high hover:text-on-surface transition-colors">
+        <span class="flex items-center gap-3">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M4 19.5A2.5 2.5 0 016.5 17H20M4 19.5A2.5 2.5 0 016.5 22H20V2H6.5A2.5 2.5 0 004 4.5v15z"/>
           </svg>
-        </a>
-      </div>
+          <span>Docs</span>
+        </span>
+        <svg class="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="square" stroke-linejoin="miter" stroke-width="2" d="M7 17L17 7m0 0H8m9 0v9"/>
+        </svg>
+      </a>
     </div>
   </aside>
 
   <!-- Main Content Area -->
-  <main class="ml-28 overflow-y-auto min-h-screen">
-    <div id="page-content" class="p-6 md:p-8">
-      <!-- Default home view -->
-      <div class="hidden" id="home-view">
-        <h1 class="text-2xl font-bold mb-4">Workstreams Web Console</h1>
-        <p class="text-muted-foreground">Select a navigation item to view dashboard screens.</p>
-        <p class="mt-4">
-          <a href="screens/monitor.html" class="text-primary underline">Monitor</a> |
-          <a href="screens/events.html" class="text-primary underline">Events</a> |
-          <a href="screens/workstreams.html" class="text-primary underline">Workstreams</a> |
-          <a href="screens/settings.html" class="text-primary underline">Settings</a>
-        </p>
+  <div class="pl-[220px]">
+    <main class="pt-14 min-h-screen">
+      <div id="page-content" class="p-6">
+        <!-- Default home view -->
+        <div class="hidden" id="home-view">
+          <h1 class="font-mono text-2xl font-bold mb-4">Workstreams Web Console</h1>
+          <p class="text-on-surface-variant">Select a navigation item to view dashboard screens.</p>
+        </div>
       </div>
-    </div>
-  </main>
+    </main>
+  </div>
 
   <script src="app.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      // Navigation switching - load screen content
       const navButtons = document.querySelectorAll('[data-nav]');
       const pageContent = document.getElementById('page-content');
 
+      function setActive(btn) {
+        navButtons.forEach(b => {
+          const on = b === btn;
+          b.classList.toggle('bg-surface-container', on);
+          b.classList.toggle('text-primary', on);
+          b.classList.toggle('font-bold', on);
+          b.classList.toggle('border-l-2', on);
+          b.classList.toggle('border-primary-fixed', on);
+          b.classList.toggle('text-on-surface-variant', !on);
+          if (on) b.setAttribute('aria-current', 'page');
+          else b.removeAttribute('aria-current');
+        });
+      }
+
       navButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-          // Remove active class from all buttons
-          navButtons.forEach(b => b.classList.remove('opacity-100', 'text-primary'));
-          
-          // Add active class to clicked button
-          btn.classList.add('opacity-100', 'text-primary');
-
-          // Hide home view
+          setActive(btn);
           const homeView = document.getElementById('home-view');
           if (homeView) homeView.classList.add('hidden');
 
           const nav = btn.getAttribute('data-nav');
-          // Load the selected screen (relative: served by `workstreams web`)
           fetch(`screens/${nav}.html`)
             .then(response => {
               if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -134,22 +157,31 @@
             })
             .then(html => {
               pageContent.innerHTML = html;
-              // Remove 'hidden' class from the screen content that gets loaded
               const loadedScreen = pageContent.querySelector('.screen-view');
               if (loadedScreen) loadedScreen.classList.remove('hidden');
               if (window.WorkstreamsWeb) window.WorkstreamsWeb.onScreenLoaded(nav);
             })
             .catch(err => {
-              pageContent.innerHTML = `<p class="text-rose-500">Error loading screen: ${err.message}</p>`;
+              pageContent.innerHTML = `<p class="text-danger code-stream">Error loading screen: ${err.message}</p>`;
             });
         });
       });
 
-      // Set default active navigation (Monitor)
+      // Shared click delegation for screen-internal interactions (tabs, table rows)
+      pageContent.addEventListener('click', (ev) => {
+        const tab = ev.target.closest('[data-inspect-tab]');
+        if (tab && window.WorkstreamsWeb) {
+          window.WorkstreamsWeb.setInspectorTab(tab.getAttribute('data-inspect-tab'));
+          return;
+        }
+        const row = ev.target.closest('tr[data-ws-id]');
+        if (row && window.WorkstreamsWeb) {
+          window.WorkstreamsWeb.focusWorkstream(parseInt(row.getAttribute('data-ws-id'), 10));
+        }
+      });
+
       const defaultNav = document.querySelector('[data-nav="monitor"]');
-      if (defaultNav) {
-        defaultNav.click();
-      }
+      if (defaultNav) defaultNav.click();
     });
   </script>
 

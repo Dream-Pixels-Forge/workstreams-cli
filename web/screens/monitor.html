@@ -1,78 +1,85 @@
 <div id="monitor-screen" class="screen-view">
-          <!-- Summary Metric Ribbons -->
-          <div class="grid grid-cols-2 gap-3 mb-6">
-            <div class="metric-ribbon">
-              <div class="metric-value text-3xl font-bold text-primary" id="total-workstreams">—</div>
-              <div class="metric-label text-on-surface/60 text-xs uppercase tracking-wider">TOTAL WORKSTREAMS</div>
-            </div>
-            <div class="metric-ribbon">
-              <div class="metric-value text-3xl font-bold text-cyan-500" id="active-workstreams">—</div>
-              <div class="metric-label text-on-surface/60 text-xs uppercase tracking-wider">ACTIVE</div>
-            </div>
-            <div class="metric-ribbon">
-              <div class="metric-value text-3xl font-bold text-emerald-500" id="clean-workstreams">—</div>
-              <div class="metric-label text-on-surface/60 text-xs uppercase tracking-wider">CLEAN</div>
-            </div>
-            <div class="metric-ribbon">
-              <div class="metric-value text-3xl font-bold text-rose-500" id="dirty-workstreams">—</div>
-              <div class="metric-label text-on-surface/60 text-xs uppercase tracking-wider">DIRTY</div>
-            </div>
-            <div class="metric-ribbon">
-              <div class="metric-value text-3xl font-bold text-rose-600" id="alerts">—</div>
-              <div class="metric-label text-on-surface/60 text-xs uppercase tracking-wider">ALERTS</div>
-            </div>
-          </div>
-
-          <!-- Workstreams Data Table -->
-          <div class="overflow-x-auto rounded border border-border p-4 mb-6">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="border-b border-border bg-surface-container text-on-surface">
-                  <th class="text-left p-2 font-medium">ID</th>
-                  <th class="text-left p-2 font-medium">WORKSTREAM / PATH</th>
-                  <th class="text-left p-2 font-medium">BRANCH</th>
-                  <th class="text-left p-2 font-medium">WORKER / PID</th>
-                  <th class="text-left p-2 font-medium">GIT STATE</th>
-                  <th class="text-left p-2 font-medium">LAST ACTIVITY</th>
-                </tr>
-              </thead>
-              <tbody id="monitor-tbody">
-                <tr><td colspan="6" class="p-2 text-on-surface/60">Loading…</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Inspector & PTY Multiplexer Dock -->
-          <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <!-- Inspector Panel -->
-            <div class="space-y-4">
-              <details class="border rounded border-border p-4" open>
-                <summary class="flex items-center justify-between cursor-pointer text-sm font-medium text-primary py-1">
-                  Terminal Output
-                </summary>
-                <div id="pty-log" class="mt-3 h-48 overflow-y-auto space-y-2 text-xs">
-                  <div class="text-on-surface/60">No log output yet.</div>
+          <div class="flex flex-col xl:flex-row gap-4">
+            <div class="flex-1 min-w-0 space-y-4">
+              <!-- Summary Metric Ribbons -->
+              <div class="grid grid-cols-2 sm:grid-cols-3 2xl:grid-cols-5 gap-3">
+                <div class="metric-ribbon">
+                  <div class="metric-value text-3xl text-primary" id="total-workstreams">—</div>
+                  <div class="metric-label text-caption mt-1">TOTAL WORKSTREAMS</div>
                 </div>
-              </details>
-
-              <details class="border rounded border-border p-4">
-                <summary class="flex items-center justify-between cursor-pointer text-sm font-medium text-primary py-1">
-                  Worker Log & Alerts
-                </summary>
-                <div id="worker-log" class="mt-3 h-48 overflow-y-auto space-y-2 text-xs">
-                  <div class="text-on-surface/60">No alerts.</div>
+                <div class="metric-ribbon">
+                  <div class="metric-value text-3xl text-secondary" id="active-workstreams">—</div>
+                  <div class="metric-label text-caption mt-1">ACTIVE</div>
                 </div>
-              </details>
-            </div>
+                <div class="metric-ribbon">
+                  <div class="metric-value text-3xl text-success" id="clean-workstreams">—</div>
+                  <div class="metric-label text-caption mt-1">CLEAN</div>
+                </div>
+                <div class="metric-ribbon">
+                  <div class="metric-value text-3xl text-warning" id="dirty-workstreams">—</div>
+                  <div class="metric-label text-caption mt-1">DIRTY</div>
+                </div>
+                <div class="metric-ribbon">
+                  <div class="metric-value text-3xl text-danger" id="alerts">—</div>
+                  <div class="metric-label text-caption mt-1">ALERTS</div>
+                </div>
+              </div>
 
-            <!-- Live Subagent Activity Rail -->
-            <div class="space-y-2">
-              <h3 class="text-sm font-medium text-primary">Live Subagent Activity</h3>
-              <div id="activity-rail" class="space-y-3">
-                <p class="text-on-surface/60 text-xs">Loading…</p>
+              <!-- Workstreams Data Table -->
+              <div class="panel">
+                <div class="panel-head flex items-center justify-between">
+                  <span>Workstreams Fleet Table</span>
+                  <span class="font-normal normal-case tracking-normal text-caption">click a row to focus inspector</span>
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-sm">
+                    <thead>
+                      <tr class="border-b border-border bg-surface-high text-on-surface-variant">
+                        <th class="text-left p-2 label-md font-bold">ID</th>
+                        <th class="text-left p-2 label-md font-bold">WORKSTREAM / PATH</th>
+                        <th class="text-left p-2 label-md font-bold">BRANCH</th>
+                        <th class="text-left p-2 label-md font-bold">WORKER / PID</th>
+                        <th class="text-left p-2 label-md font-bold">GIT STATE</th>
+                        <th class="text-left p-2 label-md font-bold">LAST ACTIVITY</th>
+                      </tr>
+                    </thead>
+                    <tbody id="monitor-tbody">
+                      <tr><td colspan="6" class="p-2 text-on-surface-variant">Loading…</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Inspector & PTY Multiplexer Dock -->
+              <div class="panel">
+                <div class="flex border-b border-border" role="tablist" aria-label="Inspector">
+                  <button type="button" data-inspect-tab="overview" class="tab-btn border-b-0" role="tab" aria-selected="true">Overview</button>
+                  <button type="button" data-inspect-tab="terminal" class="tab-btn border-b-0" role="tab" aria-selected="false">Terminal Output</button>
+                  <button type="button" data-inspect-tab="diff" class="tab-btn border-b-0" role="tab" aria-selected="false">Git Diff</button>
+                  <button type="button" data-inspect-tab="worker" class="tab-btn border-b-0" role="tab" aria-selected="false">Worker Log</button>
+                </div>
+                <div class="p-3 min-h-48">
+                  <div id="inspector-body" class="text-xs">
+                    <p class="text-on-surface-variant">Loading…</p>
+                  </div>
+                </div>
               </div>
             </div>
+
+            <!-- Live Subagent Activity Rail (340px) -->
+            <aside class="w-full xl:w-[340px] shrink-0 space-y-4" aria-label="Activity rail">
+              <div class="panel">
+                <div class="panel-head">Subagent Activity</div>
+                <div id="activity-rail" class="p-3 space-y-3 text-xs max-h-96 overflow-y-auto">
+                  <p class="text-on-surface-variant">Loading…</p>
+                </div>
+              </div>
+              <div class="panel">
+                <div class="panel-head">Recent Alerts</div>
+                <div id="alerts-rail" class="p-3 text-xs space-y-2 max-h-64 overflow-y-auto">
+                  <p class="text-on-surface-variant">Loading…</p>
+                </div>
+              </div>
+            </aside>
           </div>
         </div>
-
-        <!-- Events Screen (hidden by default) -->
