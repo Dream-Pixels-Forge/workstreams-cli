@@ -1,7 +1,7 @@
 ---
 name: workstreams
 description: Manage parallel development workstreams across terminal multiplexers (tmux, zellij, nami, lmux, wmux, herdr, tmuxp, zed, neovim terminals). Includes live monitoring dashboard, cross-process subagent event logging, and cross-terminal notifications.
-version: 0.6.4
+version: 0.6.5
 author: Dream-Pixels-Forge
 license: MIT
 platforms: [linux, macos]
