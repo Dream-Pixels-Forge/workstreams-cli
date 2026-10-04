@@ -1,0 +1,44 @@
+<div id="workstreams-screen" class="screen-view hidden">
+          <div class="space-y-4">
+            <!-- Control Bar -->
+            <div class="flex flex-col sm:flex-row gap-3 mb-4 px-2">
+              <div class="flex-1">
+                <div class="flex items-center gap-2 text-xs text-on-surface/60">
+                  <span id="ws-running">— running</span>
+                </div>
+              </div>
+              <button id="dispatch-open" class="flex-1 btn-primary text-sm font-medium">+ Dispatch New Workstream</button>
+            </div>
+
+            <!-- Dispatch Form (hidden until opened) -->
+            <div id="dispatch-form" class="hidden rounded border border-border p-4 mb-4 space-y-3">
+              <h3 class="text-sm font-medium text-primary">Dispatch a subagent</h3>
+              <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label class="text-xs text-on-surface/60">Workstream
+                  <select id="dispatch-ws" class="mt-1 w-full rounded border border-border bg-surface-container/50 p-2 text-sm"></select>
+                </label>
+                <label class="text-xs text-on-surface/60">Subagent <span class="text-rose-500">*</span>
+                  <input id="dispatch-subagent" type="text" placeholder="claude-code" class="mt-1 w-full rounded border border-border bg-surface-container/50 p-2 text-sm font-mono">
+                </label>
+                <label class="text-xs text-on-surface/60">Issue number (optional)
+                  <input id="dispatch-issue" type="number" min="0" placeholder="0" class="mt-1 w-full rounded border border-border bg-surface-container/50 p-2 text-sm font-mono">
+                </label>
+                <label class="text-xs text-on-surface/60">Agent override (optional)
+                  <input id="dispatch-agent" type="text" placeholder="same as config" class="mt-1 w-full rounded border border-border bg-surface-container/50 p-2 text-sm font-mono">
+                </label>
+              </div>
+              <label class="block text-xs text-on-surface/60">Prompt <span class="text-rose-500">*</span> (unless an issue number is given)
+                <textarea id="dispatch-prompt" rows="3" placeholder="Describe the task…" class="mt-1 w-full rounded border border-border bg-surface-container/50 p-2 text-sm"></textarea>
+              </label>
+              <button id="dispatch-submit" class="btn-primary text-sm font-medium">Dispatch</button>
+              <p id="dispatch-result" class="text-xs mt-2"></p>
+            </div>
+
+            <!-- Subagent Workstream Cards -->
+            <div id="workstreams-grid" class="grid grid-cols-2 gap-4">
+              <p class="text-on-surface/60 text-sm">Loading…</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Screen (hidden by default) -->

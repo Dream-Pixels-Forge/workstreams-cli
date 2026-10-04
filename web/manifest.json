@@ -1,0 +1,16 @@
+{
+  "name": "Stitch Dashboard",
+  "short_name": "Stitch Dashboard",
+  "description": "Dashboard implementation from Google Stitch Workstreams Agent project",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#111418",
+  "theme_color": "#b8ff47",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ]
+}

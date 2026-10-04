@@ -1,0 +1,51 @@
+<div id="settings-screen" class="screen-view hidden">
+          <div class="space-y-4">
+            <p class="text-xs text-on-surface/60">Live view of <code>.workstreams.yaml</code> served by <code>/api/config</code>.</p>
+
+            <!-- Core configuration -->
+            <div class="grid grid-cols-2 gap-3 mb-4 md:grid-cols-4">
+              <div class="rounded border border-border p-3">
+                <h4 class="text-xs font-medium text-primary mb-2">Project</h4>
+                <p class="text-on-surface/60 text-xs font-mono" id="cfg-project">—</p>
+              </div>
+              <div class="rounded border border-border p-3">
+                <h4 class="text-xs font-medium text-primary mb-2">Multiplexer</h4>
+                <p class="text-on-surface/60 text-xs font-mono" id="cfg-multiplexer">—</p>
+              </div>
+              <div class="rounded border border-border p-3">
+                <h4 class="text-xs font-medium text-primary mb-2">Layout</h4>
+                <p class="text-on-surface/60 text-xs font-mono" id="cfg-layout">—</p>
+              </div>
+              <div class="rounded border border-border p-3">
+                <h4 class="text-xs font-medium text-primary mb-2">Base branch</h4>
+                <p class="text-on-surface/60 text-xs font-mono" id="cfg-base-branch">—</p>
+              </div>
+              <div class="rounded border border-border p-3">
+                <h4 class="text-xs font-medium text-primary mb-2">Dispatch mode</h4>
+                <p class="text-on-surface/60 text-xs font-mono" id="cfg-mode">—</p>
+              </div>
+              <div class="rounded border border-border p-3">
+                <h4 class="text-xs font-medium text-primary mb-2">Default agent</h4>
+                <p class="text-on-surface/60 text-xs font-mono" id="cfg-agent">—</p>
+              </div>
+              <div class="rounded border border-border p-3">
+                <h4 class="text-xs font-medium text-primary mb-2">Shared deps</h4>
+                <p class="text-on-surface/60 text-xs font-mono" id="cfg-shared-deps">—</p>
+              </div>
+              <div class="rounded border border-border p-3">
+                <h4 class="text-xs font-medium text-primary mb-2">Base path</h4>
+                <p class="text-on-surface/60 text-xs font-mono" id="cfg-base-path">—</p>
+              </div>
+            </div>
+
+            <!-- Configured workstreams -->
+            <div class="rounded border border-border p-4">
+              <h3 class="text-sm font-medium text-primary mb-3">
+                Workstreams <span class="text-on-surface/50" id="cfg-workstream-count">—</span>
+              </h3>
+              <ul id="cfg-workstreams" class="text-xs">
+                <li class="text-on-surface/60 text-sm">Loading…</li>
+              </ul>
+            </div>
+          </div>
+        </div>

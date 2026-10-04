@@ -252,6 +252,13 @@ def build_parser() -> argparse.ArgumentParser:
     merge.add_argument("--delete-branch", action="store_true")
     merge.add_argument("--auto", action="store_true")
 
+    # web (HTTP console + JSON API)
+    web = common_parent("web")
+    web.add_argument("--host", default="127.0.0.1", help="Bind address (default: 127.0.0.1)")
+    web.add_argument("--port", type=int, default=8765, help="Port (default: 8765; 0 = ephemeral)")
+    web.add_argument("--open", action="store_true", help="Open the console in a browser")
+    web.add_argument("--multiplexer", choices=["default", "tmux", "zellij", "nami", "lmux", "wmux", "herdr"], default=None)
+
     # status-json helper
     _ = parser
     return parser
@@ -316,6 +323,15 @@ def _cmd_monitor(args) -> int:
     return 0
 
 
+def _cmd_web(args) -> int:
+    from .dashboard import WebDashboard
+
+    manager = _load_manager(args)
+    web = WebDashboard(manager, host=args.host, port=args.port)
+    web.serve_forever(open_browser=getattr(args, "open", False))
+    return 0
+
+
 def _cmd_workstream(args) -> int:
     manager = _load_manager(args)
     if args.ws_command == "add":
@@ -333,40 +349,23 @@ def _cmd_workstream(args) -> int:
 
 
 def _cmd_dispatch(args) -> int:
+    from .dispatch import dispatch_workstream
+
     manager = _load_manager(args)
-    # Build the pane command
-    prompt = args.prompt or (
-        f"Work on issue #{args.issue} as {args.subagent}" if args.issue else f"as {args.subagent}"
+    result = dispatch_workstream(
+        manager,
+        args.workstream,
+        args.subagent,
+        issue=args.issue,
+        prompt=args.prompt,
+        agent=args.agent,
+        wait=args.wait,
     )
-    if args.agent:
-        pane_cmd = f"{args.agent} {prompt}"
-        if args.issue:
-            pane_cmd = f"{args.agent} {prompt}"
-    else:
-        pane_cmd = prompt
-
-    # Re-use dispatch for logging/notify, then send the actual agent command
-    ws = manager.config.workstream(args.workstream)
-    if not ws:
-        print(f"Workstream {args.workstream} not found", file=sys.stderr)
-        return 5
-
-    from .subagent_client import subagent_started, subagent_report as _report
-    subagent_started(manager.config.project, args.workstream, args.subagent, args.issue, prompt)
-    manager._append_workstream_log(ws, f"DISPATCH [{args.subagent}] {pane_cmd}")
-    manager.notifier.send(f"Workstream {ws.name}", f"{args.subagent} started" + (f" on #{args.issue}" if args.issue else ""))
-    print(f"Dispatched {args.subagent} -> workstream {ws.name}" + (f" (issue #{args.issue})" if args.issue else ""))
-
-    mux = manager._get_multiplexer()
-    if mux is not None:
-        try:
-            mux.send_command(args.workstream, pane_cmd)
-        except Exception as e:
-            print(f"  (warning) pane send failed: {e}", file=sys.stderr)
-
-    if args.wait:
-        return manager._wait_for_done(args.workstream, args.subagent)
-    return 0
+    stream = sys.stdout if result.code == 0 else sys.stderr
+    print(result.message, file=stream)
+    for warning in result.warnings:
+        print(f"  (warning) {warning}", file=sys.stderr)
+    return result.code
 
 
 def _cmd_work(args) -> int:
@@ -553,6 +552,7 @@ HANDLERS = {
     "attach": _cmd_attach,
     "status": _cmd_status,
     "monitor": _cmd_monitor,
+    "web": _cmd_web,
     "workstream": _cmd_workstream,
     "dispatch": _cmd_dispatch,
     "work": _cmd_work,

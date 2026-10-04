@@ -1,0 +1,79 @@
+/*
+  Workstreams Web Console - Tailwind v4 source.
+  Design tokens: #111418 dark graphite, #b8ff47 electric lime, Space Mono typography.
+
+  Build (produces web/style.css):
+    npx --yes @tailwindcss/cli@4.3.3 -i web/theme.css -o web/style.css --minify
+*/
+
+@import "tailwindcss";
+
+@source "./index.html";
+@source "./app.js";
+@source "./screens/*.html";
+@source "./components/*.js";
+
+@theme {
+  --color-surface: #111418;
+  --color-surface-border: #1c2126;
+  --color-surface-container: #1a1f24;
+  --color-on-surface: #e6e9ec;
+  --color-on-surface-container: #9aa3ab;
+  --color-muted-foreground: #8a929a;
+  --color-caption: #9aa3ab;
+  --color-primary: #b8ff47;
+  --color-border: #2a3138;
+
+  --font-mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@layer components {
+  .btn-primary {
+    background: var(--color-primary);
+    color: var(--color-surface);
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: filter 0.15s ease;
+  }
+  .btn-primary:hover {
+    filter: brightness(1.08);
+  }
+  .btn-secondary {
+    background: transparent;
+    color: var(--color-on-surface);
+    border: 1px solid var(--color-border);
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+  }
+  .btn-secondary:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+  .metric-ribbon {
+    background: var(--color-surface-container);
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+  }
+  .metric-value {
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+  .metric-label {
+    letter-spacing: 0.08em;
+  }
+  .tab-btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    border-radius: 0.25rem;
+    color: var(--color-on-surface-container);
+    transition: color 0.15s ease;
+  }
+  .tab-btn:hover,
+  .tab-btn.active {
+    color: var(--color-primary);
+    background: var(--color-surface-container);
+  }
+}

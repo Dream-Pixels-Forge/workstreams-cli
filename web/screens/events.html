@@ -1,0 +1,29 @@
+<div id="events-screen" class="screen-view hidden">
+          <div class="space-y-4">
+            <!-- Header Telemetry Bar (real values from /api/status) -->
+            <div class="grid grid-cols-3 gap-4 mb-4 text-on-surface/60 text-xs">
+              <div>
+                <div class="font-mono text-primary" id="ev-total">—</div>
+                <div class="mt-1">Events (last 10 min)</div>
+              </div>
+              <div>
+                <div class="font-mono text-cyan-500" id="ev-channels">—</div>
+                <div class="mt-1">Active subagents</div>
+              </div>
+              <div>
+                <div class="font-mono text-rose-500" id="ev-fails">—</div>
+                <div class="mt-1">Failures</div>
+              </div>
+            </div>
+
+            <!-- Event stream -->
+            <div class="rounded border border-border p-4">
+              <h3 class="text-sm font-medium text-primary mb-3">Subagent Event Stream</h3>
+              <div id="events-list" class="text-xs">
+                <p class="text-on-surface/60">Loading…</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Workstreams Screen (hidden by default) -->
