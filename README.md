@@ -84,7 +84,7 @@ pip install -e ".[yaml,dev]"   # dev extras add pytest
 Verify:
 
 ```bash
-workstreams --version   # -> workstreams 0.6.2
+workstreams --version   # -> workstreams 0.6.4
 ```
 
 > **Note:** every command also accepts `--json` to emit machine-readable output (where supported), which coding agents can parse. All read-side commands work without a multiplexer installed; only `start`/`dispatch`/`work`/`attach` need one.

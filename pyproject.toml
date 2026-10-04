@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "workstreams-cli"
-version = "0.6.3"
+version = "0.6.4"
 description = "Visually dispatch coding-agent work to subagents in real terminal windows and monitor it in one dashboard - for any coding agent (Claude Code, Codex, OpenCode, Qwen Code, Hermes, Cline, and more)."
 readme = "README.md"
 requires-python = ">=3.9"
